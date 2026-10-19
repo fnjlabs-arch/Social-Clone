@@ -37,7 +37,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "eu.weblibre.gecko"
+        applicationId = "com.sadsha.socialclone"
         // https://api.flutter.dev/flutter/widgets/AndroidView-class.html
         minSdkVersion = 26
         targetSdk = 37
@@ -61,23 +61,23 @@ android {
     productFlavors {
         stable {
             dimension "track"
-            manifestPlaceholders = [appName: "WebLibre", enableImpeller: "false"]
+            manifestPlaceholders = [appName: "Social Clone", enableImpeller: "false"]
         }
         stableImpeller {
             dimension "track"
-            manifestPlaceholders = [appName: "WebLibre (Impeller)", enableImpeller: "true"]
+            manifestPlaceholders = [appName: "Social Clone (Impeller)", enableImpeller: "true"]
         }
         alpha {
             dimension "track"
             applicationIdSuffix ".alpha"
             versionNameSuffix "-alpha"
-            manifestPlaceholders = [appName: "WebLibre Alpha", enableImpeller: "false"]
+            manifestPlaceholders = [appName: "Social Clone Alpha", enableImpeller: "false"]
         }
         alphaImpeller {
             dimension "track"
             applicationIdSuffix ".alpha"
             versionNameSuffix "-alpha"
-            manifestPlaceholders = [appName: "WebLibre Alpha (Impeller)", enableImpeller: "true"]
+            manifestPlaceholders = [appName: "Social Clone Alpha (Impeller)", enableImpeller: "true"]
         }
     }
 

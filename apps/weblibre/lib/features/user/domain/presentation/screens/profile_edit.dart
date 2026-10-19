@@ -196,9 +196,21 @@ class ProfileEditScreen extends HookConsumerWidget {
         context.pop();
       }
     } else {
-      await ref
-          .read(profileRepositoryProvider.notifier)
-          .createProfile(name: name, authSettings: toSave);
+      try {
+        await ref
+            .read(profileRepositoryProvider.notifier)
+            .createProfile(name: name, authSettings: toSave);
+      } on ProfileLimitReachedException catch (e) {
+        // Social Clone licensing: the device license caps profile count.
+        if (context.mounted) {
+          showErrorMessage(
+            context,
+            'Profile limit reached (${e.maxProfiles}). Upgrade your license for more profiles.',
+            persist: true,
+          );
+        }
+        return;
+      }
 
       if (context.mounted) {
         context.pop();

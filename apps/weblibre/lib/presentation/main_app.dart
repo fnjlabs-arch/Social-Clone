@@ -25,6 +25,8 @@ import 'package:weblibre/core/providers/app_localizations.dart';
 import 'package:weblibre/core/providers/router.dart';
 import 'package:weblibre/domain/services/app_initialization.dart';
 import 'package:weblibre/features/geckoview/domain/providers.dart';
+import 'package:weblibre/features/kiosk/domain/allowlist_guard.dart';
+import 'package:weblibre/features/license/presentation/license_gate.dart';
 import 'package:weblibre/features/sync/domain/entities/sync_repository_state.dart';
 import 'package:weblibre/features/sync/domain/repositories/sync.dart';
 import 'package:weblibre/features/web_search/domain/controllers/sandbox_capture_controller.dart';
@@ -124,23 +126,30 @@ class MainApp extends HookConsumerWidget {
           supportedLocales: AppLocalizations.supportedLocales,
           routerConfig: router.value,
           builder: (context, child) {
-            return _AppMediaQueryOverrides(
-              uiScaleFactor: uiScaleFactor,
-              disableAnimations: disableAnimations,
-              child: NavigationBarStyle(
-                child: MultiFingerTapGuard(
-                  child: _SyncEventListener(
-                    child: _SandboxCaptureErrorListener(
-                      child: _DownloadStoppedListener(
-                        child: _StrictContainerBlockListener(
-                          child: child ?? const SizedBox.shrink(),
+            // LicenseGate hides the whole app until a license code is
+            // activated on this device (Social Clone licensing).
+            // AllowlistGuard closes tabs that leave TikTok/Facebook.
+            return LicenseGate(
+              child: AllowlistGuard(
+                child: _AppMediaQueryOverrides(
+                uiScaleFactor: uiScaleFactor,
+                disableAnimations: disableAnimations,
+                child: NavigationBarStyle(
+                  child: MultiFingerTapGuard(
+                    child: _SyncEventListener(
+                      child: _SandboxCaptureErrorListener(
+                        child: _DownloadStoppedListener(
+                          child: _StrictContainerBlockListener(
+                            child: child ?? const SizedBox.shrink(),
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
               ),
-            );
+            ),
+          );
           },
         );
       },

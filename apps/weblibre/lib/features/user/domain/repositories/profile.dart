@@ -29,10 +29,19 @@ import 'package:weblibre/core/startup/profile_discovery.dart';
 import 'package:weblibre/core/startup/startup_config_store.dart';
 import 'package:weblibre/core/uuid.dart' as ids;
 import 'package:weblibre/domain/entities/profile.dart';
+import 'package:weblibre/features/license/domain/license_repository.dart';
 import 'package:weblibre/features/user/data/models/auth_settings.dart';
 import 'package:weblibre/features/web_push/domain/providers.dart';
 
 part 'profile.g.dart';
+
+/// Thrown when the device license allows no further profiles.
+/// Carries the licensed maximum so the UI can explain the limit.
+class ProfileLimitReachedException implements Exception {
+  final int maxProfiles;
+
+  const ProfileLimitReachedException(this.maxProfiles);
+}
 
 @Riverpod(keepAlive: true)
 class ProfileRepository extends _$ProfileRepository {
@@ -92,6 +101,16 @@ class ProfileRepository extends _$ProfileRepository {
     required String name,
     AuthSettings? authSettings,
   }) async {
+    // Social Clone licensing: cap profiles at the licensed tier maximum.
+    // The license gate already blocks unlicensed use of the app; this is the
+    // second line of defense at the exact point of creation.
+    final maxProfiles =
+        ref.read(licenseRepositoryProvider).valueOrNull?.tier.maxProfiles ?? 0;
+    final existing = await future;
+    if (existing.length >= maxProfiles) {
+      throw ProfileLimitReachedException(maxProfiles);
+    }
+
     final profile = Profile.create(name: name, authSettings: authSettings);
     if (!await filesystem.createNewProfile(profile)) {
       throw Exception('Could not create profile');

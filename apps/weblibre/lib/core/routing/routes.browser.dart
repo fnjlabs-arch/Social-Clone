@@ -112,14 +112,58 @@ class SearchRoute extends GoRouteData with $SearchRoute {
 
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return SearchScreen(
-      tabType: tabType,
-      initialSearchText: (searchText.isEmpty || searchText == emptySearchText)
-          ? null
-          : searchText,
-      launchedFromIntent: launchedFromIntent,
-      autoSubmitSearch: autoSubmitSearch,
-      tabId: tabId,
+    // Social Clone kiosk mode: URL/search input is disabled app-wide.
+    // Users may only open TikTok and Facebook via the home shortcuts.
+    // All entry points (address bar, home pill, shortcuts) land here.
+    return const _UrlInputDisabledScreen();
+  }
+}
+
+/// Shown whenever any URL/search input is attempted in kiosk mode.
+class _UrlInputDisabledScreen extends StatelessWidget {
+  const _UrlInputDisabledScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Social Clone'),
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.block,
+                size: 56,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Only TikTok and Facebook are available in this app.',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.titleMedium,
+              ),
+              const SizedBox(height: 24),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Back'),
+              ),
+              const SizedBox(height: 32),
+              Text(
+                'Powered by SadSha',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

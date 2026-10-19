@@ -49,7 +49,7 @@ import 'package:weblibre/features/geckoview/features/browser/domain/providers/in
 import 'package:weblibre/features/geckoview/features/browser/domain/providers/lifecycle.dart';
 import 'package:weblibre/features/geckoview/features/browser/domain/services/browser_data.dart';
 import 'package:weblibre/features/geckoview/features/browser/domain/services/startup_browsing_data_cleanup.dart';
-import 'package:weblibre/features/geckoview/features/browser/presentation/widgets/browser_home.dart';
+import 'package:weblibre/features/kiosk/presentation/social_clone_home.dart';
 import 'package:weblibre/features/geckoview/features/history/domain/repositories/history.dart';
 import 'package:weblibre/features/geckoview/features/pwa/domain/providers.dart';
 import 'package:weblibre/features/geckoview/features/tabs/data/entities/tab_mode.dart';
@@ -494,7 +494,8 @@ class _BrowserViewState extends ConsumerState<BrowserView>
               ),
             ),
           ),
-          if (showHome) const Positioned.fill(child: BrowserHome()),
+          // Social Clone kiosk: simplified home with only TikTok/Facebook.
+          if (showHome) const Positioned.fill(child: SocialCloneHome()),
           const Positioned.fill(child: GestureFeedbackOverlay()),
         ],
       ),

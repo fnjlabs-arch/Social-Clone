@@ -18,14 +18,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import 'package:flutter/material.dart';
-import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:weblibre/core/providers/defaults.dart';
-import 'package:weblibre/core/routing/routes.dart';
 import 'package:weblibre/features/about/domain/providers.dart';
-import 'package:weblibre/features/geckoview/domain/repositories/tab.dart';
-import 'package:weblibre/features/geckoview/features/tabs/data/entities/tab_mode.dart';
 import 'package:weblibre/l10n/generated/app_localizations.dart';
 
 class AboutDialogScreen extends HookConsumerWidget {
@@ -62,79 +57,15 @@ class AboutDialogScreen extends HookConsumerWidget {
           ),
         ),
         const Divider(),
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: const Icon(MdiIcons.charity),
-          title: Text(l10n.about_feedbackTitle),
-          onTap: () async {
-            await ref
-                .read(tabRepositoryProvider.notifier)
-                .addTab(
-                  url: Uri.https('feedback.weblibre.eu'),
-                  tabMode: TabMode.regular,
-                  selectTab: true,
-                );
-
-            if (context.mounted) {
-              const BrowserRoute().go(context);
-            }
-          },
-        ),
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: const Icon(MdiIcons.handHeart),
-          title: Text(l10n.about_donateTitle),
-          onTap: () async {
-            await ref
-                .read(tabRepositoryProvider.notifier)
-                .addTab(
-                  url: Uri.https('github.com').replace(path: 'FaFre/WebLibre'),
-                  tabMode: TabMode.regular,
-                  selectTab: true,
-                );
-
-            if (context.mounted) {
-              const BrowserRoute().go(context);
-            }
-          },
-        ),
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          // ignore: deprecated_member_use
-          leading: const Icon(Icons.book),
-          title: Text(l10n.about_documentationTitle),
-          onTap: () async {
-            await ref
-                .read(tabRepositoryProvider.notifier)
-                .addTab(
-                  url: ref.read(docsUriProvider),
-                  tabMode: TabMode.regular,
-                  selectTab: true,
-                );
-
-            if (context.mounted) {
-              const BrowserRoute().go(context);
-            }
-          },
-        ),
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          // ignore: deprecated_member_use
-          leading: const Icon(MdiIcons.github),
-          title: Text(l10n.about_githubTitle),
-          onTap: () async {
-            await ref
-                .read(tabRepositoryProvider.notifier)
-                .addTab(
-                  url: Uri.https('github.com').replace(path: 'FaFre/WebLibre'),
-                  tabMode: TabMode.regular,
-                  selectTab: true,
-                );
-
-            if (context.mounted) {
-              const BrowserRoute().go(context);
-            }
-          },
+        // Powered by SadSha — brand credit (replaces upstream feedback/donate/docs links)
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 12),
+          child: Center(
+            child: Text(
+              'Powered by SadSha',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
         ),
       ],
     );
