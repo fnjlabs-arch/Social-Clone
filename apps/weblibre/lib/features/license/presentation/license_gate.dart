@@ -12,10 +12,10 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../domain/license_repository.dart';
-import 'license_activation_screen.dart';
+import 'welcome_screen.dart';
 
 /// App-level gate: until a license code has been activated on this device,
-/// the whole app UI stays hidden behind the activation screen.
+/// the whole app UI stays hidden behind the welcome + activation flow.
 class LicenseGate extends HookConsumerWidget {
   final Widget child;
 
@@ -26,12 +26,11 @@ class LicenseGate extends HookConsumerWidget {
     final license = ref.watch(licenseRepositoryProvider);
 
     return license.when(
-      data: (state) =>
-          state == null ? const LicenseActivationScreen() : child,
+      data: (state) => state == null ? const WelcomeScreen() : child,
       loading: () => const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       ),
-      error: (_, _) => const LicenseActivationScreen(),
+      error: (_, _) => const WelcomeScreen(),
     );
   }
 }
