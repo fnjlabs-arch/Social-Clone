@@ -10,22 +10,29 @@
 
 /// License tiers for Social Clone.
 ///
-/// Code format (30 chars total, mixed letters/digits/symbols):
-/// - 5-profile plan:  `SC5-`  + 22 random chars + 4 checksum chars
-/// - 10-profile plan: `SC10-` + 21 random chars + 4 checksum chars
+/// Code format (mixed letters/digits/symbols):
+/// - 5-profile plan:  `SC5-`  + 22 random chars + 4 checksum chars = 30 total
+/// - 10-profile plan: `SC10-` + 31 random chars + 4 checksum chars = 40 total
 ///
-/// The 4-char checksum is a base36 encoding of a weighted sum over the
-/// preceding 26 chars, so trivially forged codes are rejected offline.
+/// The longer SC10 code is the premium tier's distinguishing trait. The
+/// 4-char checksum is a base36 encoding of a weighted sum over the body
+/// (prefix + random part), so trivially forged codes are rejected offline.
 /// Dashboard-issued codes always carry a valid checksum; the dashboard API
 /// can additionally verify issuance server-side (see [LicenseRepository]).
 enum LicenseTier {
-  five(5, 'SC5-'),
-  ten(10, 'SC10-');
+  five(5, 'SC5-', 30),
+  ten(10, 'SC10-', 40);
 
   final int maxProfiles;
   final String codePrefix;
 
-  const LicenseTier(this.maxProfiles, this.codePrefix);
+  /// Total code length including prefix and checksum.
+  final int codeLength;
+
+  const LicenseTier(this.maxProfiles, this.codePrefix, this.codeLength);
+
+  /// Body = everything except the trailing 4 checksum chars.
+  int get bodyLength => codeLength - 4;
 
   static LicenseTier? fromCode(String code) {
     for (final tier in LicenseTier.values) {
@@ -37,22 +44,25 @@ enum LicenseTier {
   }
 }
 
-/// Validates a 30-char license code offline and returns its tier,
-/// or null when the code is malformed.
+/// Validates a license code offline and returns its tier,
+/// or null when the code is malformed. A code only ever validates
+/// against its own tier's length (an SC5 code is 30 chars, an SC10
+/// code is 40 — they are not interchangeable).
 LicenseTier? validateLicenseCode(String rawCode) {
   final code = rawCode.trim();
-  if (code.length != 30) {
-    return null;
-  }
 
   final tier = LicenseTier.fromCode(code);
   if (tier == null) {
     return null;
   }
 
-  // Body = first 26 chars (prefix + random part), checksum = last 4.
-  final body = code.substring(0, 26);
-  final checksum = code.substring(26);
+  if (code.length != tier.codeLength) {
+    return null;
+  }
+
+  // Body = prefix + random part, checksum = last 4 chars.
+  final body = code.substring(0, tier.bodyLength);
+  final checksum = code.substring(tier.bodyLength);
 
   if (checksum != _checksumFor(body)) {
     return null;

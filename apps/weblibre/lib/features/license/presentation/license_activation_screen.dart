@@ -15,9 +15,10 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../domain/license_code.dart';
 import '../domain/license_repository.dart';
 
-/// First-run activation: the user enters the 30-char license code bought
-/// from their teacher. Until a valid code is stored, the rest of the app
-/// stays hidden behind [LicenseGate].
+/// First-run activation: the user enters the license code bought
+/// from their teacher (30 chars for the 5-profile plan, 40 for the
+/// 10-profile plan — one field accepts both). Until a valid code is
+/// stored, the rest of the app stays hidden behind [LicenseGate].
 class LicenseActivationScreen extends HookConsumerWidget {
   /// Called when the user taps back (returns to the welcome screen).
   /// There is no Navigator above the license gate, so the gate owns
@@ -90,7 +91,7 @@ class LicenseActivationScreen extends HookConsumerWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Enter the 30-character license code from your teacher to unlock the app.',
+                'Enter the license code from your teacher to unlock the app.',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
@@ -101,7 +102,7 @@ class LicenseActivationScreen extends HookConsumerWidget {
                 valueListenable: error,
                 builder: (context, errorText, _) => TextField(
                   controller: codeController,
-                  maxLength: 30,
+                  maxLength: 40,
                   autocorrect: false,
                   enableSuggestions: false,
                   textCapitalization: TextCapitalization.none,
@@ -114,7 +115,7 @@ class LicenseActivationScreen extends HookConsumerWidget {
                   ],
                   decoration: InputDecoration(
                     labelText: 'License code',
-                    hintText: 'SC10-•••••••••••••••••••••••••',
+                    hintText: 'SC5-… or SC10-…',
                     border: const OutlineInputBorder(),
                     errorText: errorText,
                     counterText: '',

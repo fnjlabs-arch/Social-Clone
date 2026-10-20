@@ -14,15 +14,16 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../domain/license_repository.dart';
 import 'license_activation_screen.dart';
+import 'plan_screens.dart';
 import 'welcome_screen.dart';
 
 /// Wraps the whole app: without an activated license the user only sees
-/// the welcome screen and the license activation screen; the real app is
-/// not built at all.
+/// the locked funnel — welcome, the two plan screens, then activation;
+/// the real app is not built at all.
 ///
 /// The gate lives above the app router (MaterialApp.builder), so no
-/// Navigator is available here — welcome ↔ activation switching is done
-/// with local state, not routes.
+/// Navigator is available here — funnel steps are switched with local
+/// state, not routes.
 class LicenseGate extends HookConsumerWidget {
   final Widget child;
 
@@ -31,14 +32,39 @@ class LicenseGate extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final license = ref.watch(licenseRepositoryProvider);
-    final showActivation = useState(false);
+    // Funnel step: 0 welcome → 1 plan (5 profiles) → 2 plan (10 profiles)
+    // → 3 activation.
+    final step = useState(0);
 
     Widget locked() {
-      return showActivation.value
-          ? LicenseActivationScreen(
-              onBack: () => showActivation.value = false,
-            )
-          : WelcomeScreen(onActivate: () => showActivation.value = true);
+      switch (step.value) {
+        case 1:
+          return PlanScreen(
+            profiles: 5,
+            price: '\$5',
+            bestValue: false,
+            ctaLabel: 'Continue',
+            onCta: () => step.value = 2,
+            onHaveCode: () => step.value = 3,
+            onBack: () => step.value = 0,
+          );
+        case 2:
+          return PlanScreen(
+            profiles: 10,
+            price: '\$7',
+            bestValue: true,
+            ctaLabel: 'Activate License',
+            onCta: () => step.value = 3,
+            onHaveCode: () => step.value = 3,
+            onBack: () => step.value = 1,
+          );
+        case 3:
+          return LicenseActivationScreen(
+            onBack: () => step.value = 2,
+          );
+        default:
+          return WelcomeScreen(onActivate: () => step.value = 1);
+      }
     }
 
     return license.when(
