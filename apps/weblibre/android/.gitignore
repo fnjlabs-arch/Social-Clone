@@ -14,3 +14,7 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+# Exception: the repo's shared DEBUG keystore (public android/androiddebugkey
+# credentials — debug keys are not secret). Committed on purpose so every CI
+# test build is signed with the same key and installs over the previous one.
+!app/debug.keystore

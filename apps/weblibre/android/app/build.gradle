@@ -110,6 +110,18 @@ android {
     }
 
     signingConfigs {
+        // Fixed debug keystore committed to the repo, so every CI test build
+        // is signed with the SAME key and installs over the previous test
+        // build (no uninstall needed). Debug credentials are public by design
+        // (android/androiddebugkey) — this key is only ever used for test
+        // builds, never for Play Store releases.
+        debug {
+            storeFile file("debug.keystore")
+            storePassword "android"
+            keyAlias "androiddebugkey"
+            keyPassword "android"
+            storeType "PKCS12"
+        }
         release {
             keyAlias System.getenv("KEY_ALIAS")
             keyPassword System.getenv("KEY_PASSWORD")
