@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Taxi Norderstedt | Raiyo Taxi – 24/7 Flughafentransfer &amp; Stadtfahrten</title>
+<meta name="description" content="Taxi Norderstedt gesucht? Raiyo Taxi fährt Sie rund um die Uhr (24/7): Stadtfahrten, Flughafentransfer Hamburg und Geschäftsfahrten. Jetzt anrufen: +49 172 9666466 oder bequem per WhatsApp buchen.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://raiyotaxi.de/">
+<meta name="theme-color" content="#101114">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:locale" content="de_DE">
+<meta property="og:site_name" content="Raiyo Taxi">
+<meta property="og:title" content="Taxi Norderstedt | Raiyo Taxi – 24/7 für Sie da">
+<meta property="og:description" content="Ihr Taxi in Norderstedt: Stadtfahrten, Flughafentransfer Hamburg und Geschäftsfahrten – rund um die Uhr. Anrufen: +49 172 9666466">
+<meta property="og:url" content="https://raiyotaxi.de/">
+
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TaxiService",
+  "name": "Raiyo Taxi",
+  "alternateName": "Rai yo taxi service",
+  "url": "https://raiyotaxi.de/",
+  "telephone": "+49 172 9666466",
+  "description": "Taxi Norderstedt – Stadtfahrten, Flughafentransfer Hamburg und Geschäftsfahrten, rund um die Uhr (24/7).",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "Falkenhorst 61",
+    "addressLocality": "Norderstedt",
+    "addressCountry": "DE"
+  },
+  "areaServed": [
+    "Norderstedt",
+    "Hamburg",
+    "Flughafen Hamburg",
+    "Quickborn",
+    "Ellerbek",
+    "Henstedt-Ulzburg",
+    "Kaltenkirchen",
+    "Bönningstedt",
+    "Hasloh",
+    "Nahe"
+  ],
+  "openingHoursSpecification": {
+    "@type": "OpeningHoursSpecification",
+    "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+    "opens": "00:00",
+    "closes": "23:59"
+  },
+  "paymentAccepted": "Cash, Credit Card, Debit Card",
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "5.0",
+    "reviewCount": "5"
+  }
+}
+</script>
+
+<style>
+/* ============ Design-System: Raiyo Taxi ============ */
+:root{
+  --bg:#101114;
+  --bg-2:#15161a;
+  --panel:#1a1b20;
+  --panel-2:#202127;
+  --line:rgba(255,255,255,.09);
+  --yellow:#ffc400;
+  --yellow-2:#ffd83d;
+  --yellow-soft:rgba(255,196,0,.12);
+  --wa:#22c064;
+  --wa-dark:#128c4b;
+  --text:#f5f4ef;
+  --muted:#a9abb4;
+  --muted-2:#7e808a;
+  --radius:18px;
+  --radius-s:12px;
+  --shadow:0 18px 50px rgba(0,0,0,.45);
+  --header-h:66px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:calc(var(--header-h) + 14px)}
+body{
+  font-family:"Manrope",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  line-height:1.6;
+  font-size:16.5px;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+img,svg{display:block}
+a{color:inherit;text-decoration:none}
+::selection{background:var(--yellow);color:#141414}
+:focus-visible{outline:3px solid var(--yellow);outline-offset:3px;border-radius:6px}
+
+.wrap{width:min(1160px,100% - 40px);margin-inline:auto}
+section{padding:84px 0}
+.section-head{max-width:640px;margin-bottom:44px}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:.78rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--yellow);margin-bottom:14px;
+}
+.eyebrow::before{content:"";width:26px;height:2px;background:var(--yellow);border-radius:2px}
+h1,h2,h3{line-height:1.14;font-weight:800;letter-spacing:-.015em}
+h2{font-size:clamp(1.75rem,4.5vw,2.6rem);margin-bottom:12px}
+h3{font-size:1.16rem}
+.lead{color:var(--muted);font-size:1.06rem}
+
+/* Schachbrett-Akzent (Taxi-Motiv) */
+.checker{
+  height:12px;
+  background:repeating-conic-gradient(#0b0b0d 0% 25%, var(--yellow) 0% 50%) 50% / 24px 24px;
+  opacity:.9;
+}
+
+/* ============ Header ============ */
+header.site{
+  position:sticky;top:0;z-index:60;height:var(--header-h);
+  background:rgba(16,17,20,.86);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);
+}
+.header-in{display:flex;align-items:center;justify-content:space-between;gap:16px;height:var(--header-h)}
+.brand{display:flex;align-items:center;gap:11px;font-weight:800;font-size:1.22rem;letter-spacing:-.01em}
+.brand .mark{width:38px;height:38px;flex:none}
+.brand em{font-style:normal;color:var(--yellow)}
+nav.main{display:none;gap:30px;font-weight:600;font-size:.96rem;color:var(--muted)}
+nav.main a{padding:6px 0;position:relative}
+nav.main a:hover{color:var(--text)}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  font-weight:800;font-size:1rem;line-height:1;
+  padding:15px 24px;border-radius:999px;border:1px solid transparent;
+  transition:transform .18s ease, box-shadow .18s ease, background .18s ease;
+  cursor:pointer;white-space:nowrap;
+}
+.btn svg{width:20px;height:20px;flex:none}
+.btn:active{transform:scale(.97)}
+.btn-call{background:var(--yellow);color:#171400;box-shadow:0 10px 28px rgba(255,196,0,.28)}
+.btn-call:hover{background:var(--yellow-2)}
+.btn-wa{background:var(--wa);color:#06130b;box-shadow:0 10px 28px rgba(34,192,100,.22)}
+.btn-wa:hover{background:#2bd173}
+.btn-ghost{background:transparent;border-color:var(--line);color:var(--text)}
+.btn-ghost:hover{border-color:rgba(255,255,255,.3)}
+.btn-sm{padding:11px 18px;font-size:.93rem}
+.header-call .num{display:none}
+
+/* ============ Hero ============ */
+.hero{
+  position:relative;
+  padding:76px 0 88px;
+  background:
+    radial-gradient(900px 480px at 85% -10%, rgba(255,196,0,.16), transparent 60%),
+    radial-gradient(700px 500px at -10% 110%, rgba(255,196,0,.07), transparent 55%),
+    linear-gradient(180deg,#131418 0%, var(--bg) 100%);
+  overflow:hidden;
+}
+.hero::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:radial-gradient(rgba(255,255,255,.055) 1px, transparent 1px);
+  background-size:26px 26px;
+  mask-image:linear-gradient(180deg,transparent,#000 30%,#000 70%,transparent);
+  -webkit-mask-image:linear-gradient(180deg,transparent,#000 30%,#000 70%,transparent);
+}
+.hero-in{position:relative;z-index:1;max-width:760px}
+.live-badge{
+  display:inline-flex;align-items:center;gap:9px;
+  background:var(--panel);border:1px solid var(--line);
+  padding:8px 15px;border-radius:999px;
+  font-size:.86rem;font-weight:700;color:var(--muted);margin-bottom:26px;
+}
+.live-badge .dot{width:9px;height:9px;border-radius:50%;background:var(--wa);box-shadow:0 0 0 0 rgba(34,192,100,.5);animation:pulse 2.2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(34,192,100,.45)}70%{box-shadow:0 0 0 9px rgba(34,192,100,0)}100%{box-shadow:0 0 0 0 rgba(34,192,100,0)}}
+.hero h1{font-size:clamp(2.5rem,7.2vw,4.3rem);margin-bottom:20px}
+.hero h1 .accent{
+  color:var(--yellow);
+  background:linear-gradient(92deg,var(--yellow) 10%,var(--yellow-2) 90%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+}
+.hero .sub{color:var(--muted);font-size:clamp(1.02rem,2.4vw,1.2rem);max-width:600px;margin-bottom:36px}
+.hero-cta{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:44px}
+.hero-cta .btn{padding:18px 30px;font-size:1.05rem}
+.trust{
+  display:flex;flex-wrap:wrap;gap:12px 34px;
+  border-top:1px solid var(--line);padding-top:26px;
+}
+.trust li{list-style:none;display:flex;align-items:center;gap:10px;font-weight:700;font-size:.97rem}
+.trust svg{width:21px;height:21px;color:var(--yellow);flex:none}
+.trust small{display:block;color:var(--muted);font-weight:600;font-size:.8rem}
+
+/* ============ Leistungen ============ */
+.services{background:var(--bg-2);border-block:1px solid var(--line)}
+.grid{display:grid;gap:18px;grid-template-columns:1fr}
+.card{
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  padding:30px 28px;transition:transform .25s ease, border-color .25s ease, background .25s ease;
+}
+.card:hover{transform:translateY(-4px);border-color:rgba(255,196,0,.35);background:var(--panel-2)}
+.card .icon{
+  width:54px;height:54px;border-radius:15px;margin-bottom:20px;
+  background:var(--yellow-soft);color:var(--yellow);
+  display:flex;align-items:center;justify-content:center;
+}
+.card .icon svg{width:27px;height:27px}
+.card h3{margin-bottom:9px}
+.card p{color:var(--muted);font-size:.99rem}
+.card .tag{
+  display:inline-block;margin-top:16px;font-size:.76rem;font-weight:800;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--yellow);
+  border:1px solid rgba(255,196,0,.35);padding:5px 11px;border-radius:999px;
+}
+
+/* ============ Buchung ============ */
+.booking-grid{display:grid;gap:34px;grid-template-columns:1fr;align-items:start}
+.booking-copy p{color:var(--muted);margin-bottom:22px}
+.booking-points{display:grid;gap:14px}
+.booking-points li{list-style:none;display:flex;gap:12px;align-items:flex-start;font-weight:600}
+.booking-points svg{width:22px;height:22px;color:var(--wa);flex:none;margin-top:2px}
+.booking-points span{color:var(--muted);font-weight:500;display:block;font-size:.94rem}
+.form-card{
+  background:linear-gradient(180deg,var(--panel-2),var(--panel));
+  border:1px solid var(--line);border-radius:22px;padding:30px 26px;
+  box-shadow:var(--shadow);
+}
+.form-card h3{font-size:1.3rem;margin-bottom:6px}
+.form-card>p{color:var(--muted);font-size:.95rem;margin-bottom:24px}
+.field{margin-bottom:16px}
+.field label{display:block;font-weight:700;font-size:.9rem;margin-bottom:7px}
+.field input,.field select{
+  width:100%;background:#121317;border:1px solid var(--line);border-radius:var(--radius-s);
+  color:var(--text);font:inherit;font-size:1rem;padding:14px 15px;
+  color-scheme:dark;appearance:none;
+}
+.field select{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' fill='none' stroke='%23ffc400' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 16px center;
+}
+.field input:focus,.field select:focus{outline:none;border-color:var(--yellow);box-shadow:0 0 0 3px rgba(255,196,0,.18)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-card .btn{width:100%;margin-top:6px;padding:17px 24px}
+.form-note{color:var(--muted-2);font-size:.83rem;text-align:center;margin-top:14px}
+
+/* ============ Warum ============ */
+.why{background:var(--bg-2);border-block:1px solid var(--line)}
+.why .card .icon{background:rgba(34,192,100,.12);color:#3ddc84}
+.why .card:hover{border-color:rgba(34,192,100,.35)}
+
+/* ============ Einsatzgebiet ============ */
+.chips{display:flex;flex-wrap:wrap;gap:11px;margin-bottom:30px}
+.chip{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--panel);border:1px solid var(--line);border-radius:999px;
+  padding:11px 19px;font-weight:700;font-size:.97rem;
+}
+.chip svg{width:16px;height:16px;color:var(--yellow)}
+.chip.main{background:var(--yellow);color:#171400;border-color:var(--yellow)}
+.chip.main svg{color:#171400}
+.area-note{color:var(--muted);max-width:640px}
+
+/* ============ FAQ ============ */
+.faq{background:var(--bg-2);border-top:1px solid var(--line)}
+.faq-list{max-width:820px;display:grid;gap:13px}
+details{
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-s);
+  overflow:hidden;
+}
+details[open ]{border-color:rgba(255,196,0,.35)}
+summary{
+  cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:16px;
+  padding:20px 22px;font-weight:800;font-size:1.02rem;
+}
+summary::-webkit-details-marker{display:none}
+summary .plus{
+  width:30px;height:30px;flex:none;border-radius:50%;
+  background:var(--yellow-soft);color:var(--yellow);
+  display:flex;align-items:center;justify-content:center;font-size:1.25rem;font-weight:800;line-height:1;
+  transition:transform .25s ease;
+}
+details[open ] summary .plus{transform:rotate(45deg)}
+details .answer{padding:0 22px 22px;color:var(--muted)}
+details .answer a{color:var(--yellow);font-weight:700;white-space:nowrap}
+
+/* ============ Kontakt / Footer ============ */
+.contact-card{
+  background:linear-gradient(135deg,#1d1e24, #141518);
+  border:1px solid var(--line);border-radius:24px;
+  padding:44px 34px;text-align:center;position:relative;overflow:hidden;
+}
+.contact-card::before{
+  content:"";position:absolute;inset:0;
+  background:radial-gradient(560px 260px at 50% -20%, rgba(255,196,0,.18), transparent 65%);
+  pointer-events:none;
+}
+.contact-card h2{margin-bottom:10px}
+.contact-card p{color:var(--muted);max-width:480px;margin:0 auto 30px}
+.big-number{
+  display:inline-block;font-size:clamp(1.7rem,6vw,2.7rem);font-weight:800;letter-spacing:-.01em;
+  color:var(--yellow);margin-bottom:30px;
+}
+.big-number:hover{color:var(--yellow-2)}
+.contact-cta{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;position:relative}
+address{
+  font-style:normal;color:var(--muted);margin-top:34px;font-size:.98rem;
+  display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;
+}
+address svg{width:18px;height:18px;color:var(--yellow)}
+footer.site{border-top:1px solid var(--line);padding:46px 0 110px;background:#0c0c0f}
+.footer-grid{display:grid;gap:30px;grid-template-columns:1fr}
+.footer-brand p{color:var(--muted-2);font-size:.92rem;margin-top:10px;max-width:340px}
+.impressum{color:var(--muted-2);font-size:.88rem;line-height:1.75}
+.impressum strong{color:var(--muted);display:block;font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px}
+.impressum a{color:var(--muted);font-weight:700}
+.copyright{
+  margin-top:36px;padding-top:22px;border-top:1px solid var(--line);
+  color:var(--muted-2);font-size:.85rem;display:flex;flex-wrap:wrap;gap:8px 22px;justify-content:space-between;
+}
+
+/* ============ Mobile-Aktionsleiste ============ */
+.actionbar{
+  position:fixed;left:0;right:0;bottom:0;z-index:70;
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;
+  padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+  background:rgba(12,12,15,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border-top:1px solid var(--line);
+}
+.actionbar .btn{padding:16px 10px;font-size:1rem;border-radius:14px}
+
+/* ============ Reveal-Animation ============ */
+.js .reveal{opacity:0;transform:translateY(18px);transition:opacity .7s ease, transform .7s ease}
+.js .reveal.in{opacity:1;transform:none}
+
+/* ============ Responsive ============ */
+@media (min-width:640px){
+  .grid{grid-template-columns:1fr 1fr}
+  .header-call .num{display:inline}
+  .header-call .word{display:none}
+}
+@media (min-width:900px){
+  nav.main{display:flex}
+  .grid{grid-template-columns:repeat(4,1fr)}
+  .why .grid{grid-template-columns:repeat(4,1fr)}
+  .booking-grid{grid-template-columns:1fr 1.05fr;gap:54px}
+  .footer-grid{grid-template-columns:1.3fr 1fr}
+  .actionbar{display:none}
+  footer.site{padding-bottom:46px}
+  section{padding:104px 0}
+}
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  .js .reveal{opacity:1;transform:none;transition:none}
+  .live-badge .dot{animation:none}
+  *{transition:none !important}
+}
+</style>
+</head>
+
+<body>
+
+<!-- ================= Header ================= -->
+<header class="site">
+  <div class="wrap header-in">
+    <a class="brand" href="#start" aria-label="Raiyo Taxi – zur Startseite">
+      <svg class="mark" viewBox="0 0 48 48" role="img" aria-label="Raiyo Taxi Logo">
+        <rect width="48" height="48" rx="11" fill="#ffc400"/>
+        <text x="24" y="29" text-anchor="middle" font-family="Manrope, Arial, sans-serif" font-size="24" font-weight="800" fill="#141414">R</text>
+        <path d="M8 38h6v5H8zM20 38h6v5h-6zM32 38h6v5h-6zM14 42.5h6V47h-6zM26 42.5h6V47h-6z" fill="#141414"/>
+      </svg>
+      <span>Raiyo&nbsp;<em>Taxi</em></span>
+    </a>
+    <nav class="main" aria-label="Hauptnavigation">
+      <a href="#leistungen">Leistungen</a>
+      <a href="#buchung">Buchung</a>
+      <a href="#einsatzgebiet">Einsatzgebiet</a>
+      <a href="#faq">FAQ</a>
+      <a href="#kontakt">Kontakt</a>
+    </nav>
+    <a class="btn btn-call btn-sm header-call" href="tel:+491729666466" aria-label="Raiyo Taxi anrufen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      <span class="word">Anrufen</span><span class="num">+49 172 9666466</span>
+    </a>
+  </div>
+</header>
+
+<main id="start">
+
+  <!-- ================= Hero ================= -->
+  <div class="hero">
+    <div class="wrap hero-in">
+      <span class="live-badge"><span class="dot"></span> Jetzt erreichbar – wir fahren rund um die Uhr</span>
+      <h1>Taxi Norderstedt –<br><span class="accent">rund um die Uhr für Sie da.</span></h1>
+      <p class="sub">Ob Stadtfahrt, Fahrt zum Flughafen Hamburg oder Geschäftstermin: Raiyo Taxi bringt Sie sicher und pünktlich ans Ziel – Tag und Nacht, auch an Sonn- und Feiertagen.</p>
+      <div class="hero-cta">
+        <a class="btn btn-call" href="tel:+491729666466">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          Jetzt anrufen
+        </a>
+        <a class="btn btn-wa" href="https://wa.me/491729666466?text=Hallo%20Raiyo%20Taxi%2C%20ich%20m%C3%B6chte%20ein%20Taxi%20bestellen." target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+          Per WhatsApp buchen
+        </a>
+      </div>
+      <ul class="trust">
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          <span>24/7 Service<small>Auch nachts &amp; feiertags</small></span>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26"/></svg>
+          <span>5,0 von 5 Sternen auf Google<small>Aus 5 Bewertungen</small></span>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.59 13.41 11 3H4v7l9.59 9.59a2 2 0 0 0 2.82 0l4.18-4.18a2 2 0 0 0 0-2.82z"/><circle cx="7.5" cy="7.5" r="1.2" fill="currentColor" stroke="none"/></svg>
+          <span>Festpreis-Anfrage<small>Preis vorab auf Anfrage</small></span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ================= Leistungen ================= -->
+  <section class="services" id="leistungen">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">Leistungen</span>
+        <h2>Unsere Leistungen in Norderstedt &amp; Umgebung</h2>
+        <p class="lead">Vom kurzen Weg in der Stadt bis zur Fahrt ans andere Ende der Region – wir bringen Sie ans Ziel.</p>
+      </div>
+      <div class="grid">
+        <article class="card reveal">
+          <div class="icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V8l4-4v17"/><path d="M9 21V4l6 4v13"/><path d="M15 21V10l4 3v8"/><path d="M12 8h.01M12 12h.01M12 16h.01"/></svg>
+          </div>
+          <h3>Stadtfahrten</h3>
+          <p>Zum Arzt, zum Einkaufen oder zum Bahnhof: Wir fahren Sie innerhalb von Norderstedt und in die gesamte Umgebung – sicher, bequem und ohne lange Wartezeiten.</p>
+        </article>
+        <article class="card reveal">
+          <div class="icon">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>
+          </div>
+          <h3>Flughafentransfer Hamburg</h3>
+          <p>Entspannt zum Abflug und wieder nach Hause: Wir holen Sie pünktlich ab und bringen Sie zuverlässig zum Flughafen Hamburg – auch bei frühen Abflügen und späten Landungen.</p>
+          <span class="tag">Festpreis auf Anfrage</span>
+        </article>
+        <article class="card reveal">
+          <div class="icon">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-2 .89-2 2v11c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-10 0V4h4v2h-4z"/></svg>
+          </div>
+          <h3>Geschäftsfahrten</h3>
+          <p>Diskret, pünktlich und repräsentativ: Für Kundentermine, Messen und Geschäftsreisen in Norderstedt, Hamburg und ganz Schleswig-Holstein – auf Wunsch mit Vorbestellung.</p>
+        </article>
+        <article class="card reveal">
+          <div class="icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+          </div>
+          <h3>Fern- &amp; Kurierfahrten</h3>
+          <p>Auch längere Strecken und eilige Kurierfahrten übernehmen wir gerne – sprechen Sie uns einfach an, wir finden eine Lösung.</p>
+          <span class="tag">Auf Anfrage</span>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= Buchung ================= -->
+  <section id="buchung">
+    <div class="wrap">
+      <div class="booking-grid">
+        <div class="booking-copy reveal">
+          <span class="eyebrow">Buchung</span>
+          <h2>Fahrt per WhatsApp buchen – in wenigen Schritten</h2>
+          <p>Tragen Sie einfach Abholort und Ziel ein. Mit einem Klick öffnet sich WhatsApp mit Ihrer fertigen Buchungsnachricht – wir bestätigen Ihre Fahrt persönlich.</p>
+          <ul class="booking-points">
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+              <div>Keine Registrierung nötig<span>Kein Konto, keine App – einfach Formular ausfüllen und absenden.</span></div>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+              <div>Rund um die Uhr<span>Buchbar Tag und Nacht – auch für Fahrten am frühen Morgen.</span></div>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+              <div>Lieber persönlich?<span>Rufen Sie uns einfach an: <a href="tel:+491729666466" style="color:var(--yellow);font-weight:800;white-space:nowrap">+49 172 9666466</a></span></div>
+            </li>
+          </ul>
+        </div>
+        <div class="form-card reveal">
+          <h3>Ihre Fahrt anfragen</h3>
+          <p>Alle Angaben werden direkt in Ihre WhatsApp-Nachricht übernommen.</p>
+          <form id="bookingForm" novalidate>
+            <div class="field">
+              <label for="pickup">Abholort</label>
+              <input type="text" id="pickup" name="pickup" placeholder="z. B. Falkenhorst 61, Norderstedt" autocomplete="street-address" required>
+            </div>
+            <div class="field">
+              <label for="destination">Ziel</label>
+              <input type="text" id="destination" name="destination" placeholder="z. B. Flughafen Hamburg, Terminal 1" required>
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label for="date">Datum</label>
+                <input type="date" id="date" name="date" required>
+              </div>
+              <div class="field">
+                <label for="time">Uhrzeit</label>
+                <input type="time" id="time" name="time" required>
+              </div>
+            </div>
+            <div class="field">
+              <label for="persons">Anzahl Personen</label>
+              <select id="persons" name="persons">
+                <option value="1" selected>1 Person</option>
+                <option value="2">2 Personen</option>
+                <option value="3">3 Personen</option>
+                <option value="4">4 Personen</option>
+                <option value="5+">5 oder mehr Personen</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-wa">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+              Buchung per WhatsApp senden
+            </button>
+            <p class="form-note">Es öffnet sich WhatsApp mit Ihrer Nachricht – Absenden genügt.</p>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= Warum Raiyo Taxi ================= -->
+  <section class="why">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">Warum wir</span>
+        <h2>Warum Raiyo Taxi?</h2>
+        <p class="lead">Ihr Taxiunternehmen aus Norderstedt – persönlich, zuverlässig und immer für Sie da.</p>
+      </div>
+      <div class="grid">
+        <article class="card reveal">
+          <div class="icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+          </div>
+          <h3>Professionelle Fahrer</h3>
+          <p>Erfahrene und ortskundige Fahrer, die Norderstedt und Hamburg kennen – freundlich, hilfsbereit und sicher unterwegs.</p>
+        </article>
+        <article class="card reveal">
+          <div class="icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          </div>
+          <h3>Pünktlich &amp; zuverlässig</h3>
+          <p>Wir sind da, wenn es zählt: zum vereinbarten Zeitpunkt an Ihrem Abholort – auch früh morgens, spät nachts und an Feiertagen.</p>
+        </article>
+        <article class="card reveal">
+          <div class="icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg>
+          </div>
+          <h3>Alle Zahlungsarten</h3>
+          <p>Zahlen Sie, wie es Ihnen am liebsten ist: Wir akzeptieren alle gängigen Zahlungsarten, darunter Barzahlung und Kartenzahlung.</p>
+        </article>
+        <article class="card reveal">
+          <div class="icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>
+          </div>
+          <h3>Einfache Buchung</h3>
+          <p>Ein Anruf oder eine WhatsApp-Nachricht genügt – ganz ohne App, Konto oder lange Formulare. Schnell, direkt und persönlich.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= Einsatzgebiet ================= -->
+  <section id="einsatzgebiet">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">Einsatzgebiet</span>
+        <h2>Von Norderstedt in die ganze Region</h2>
+        <p class="lead">Wir fahren Sie von Norderstedt aus ans Ziel – unter anderem in diese Orte:</p>
+      </div>
+      <div class="chips reveal">
+        <span class="chip main"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Norderstedt</span>
+        <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Hamburg</span>
+        <span class="chip"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>Flughafen Hamburg</span>
+        <span class="chip">Quickborn</span>
+        <span class="chip">Ellerbek</span>
+        <span class="chip">Henstedt-Ulzburg</span>
+        <span class="chip">Kaltenkirchen</span>
+        <span class="chip">Bönningstedt</span>
+        <span class="chip">Hasloh</span>
+        <span class="chip">Nahe</span>
+      </div>
+      <p class="area-note reveal">Ihr Ort ist nicht dabei? Kein Problem – als Taxi in Norderstedt fahren wir Sie selbstverständlich auch in weitere Orte in Schleswig-Holstein und Hamburg. Fragen Sie einfach kurz an: <a href="tel:+491729666466" style="color:var(--yellow);font-weight:800;white-space:nowrap">+49 172 9666466</a></p>
+    </div>
+  </section>
+
+  <!-- ================= FAQ ================= -->
+  <section class="faq" id="faq">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">Häufige Fragen</span>
+        <h2>Gut zu wissen</h2>
+      </div>
+      <div class="faq-list reveal">
+        <details>
+          <summary>Wie buche ich ein Taxi bei Raiyo Taxi?<span class="plus" aria-hidden="true">+</span></summary>
+          <div class="answer">Ganz einfach: Rufen Sie uns unter <a href="tel:+491729666466">+49 172 9666466</a> an oder schreiben Sie uns per WhatsApp – rund um die Uhr, auch nachts und an Feiertagen. Für Flughafentransfers und Geschäftsfahrten empfehlen wir eine kurze Vorbestellung.</div>
+        </details>
+        <details>
+          <summary>Was kostet eine Fahrt zum Flughafen Hamburg?<span class="plus" aria-hidden="true">+</span></summary>
+          <div class="answer">Für Fahrten zum Flughafen Hamburg nennen wir Ihnen auf Anfrage vorab einen Festpreis – so wissen Sie schon vor Fahrtantritt genau, was die Fahrt kostet. Fragen Sie einfach kurz per Anruf oder WhatsApp an: <a href="tel:+491729666466">+49 172 9666466</a>.</div>
+        </details>
+        <details>
+          <summary>Kann ich mit Karte zahlen?<span class="plus" aria-hidden="true">+</span></summary>
+          <div class="answer">Ja. Wir akzeptieren alle gängigen Zahlungsarten – darunter Barzahlung und Kartenzahlung. Zahlen Sie einfach so, wie es für Sie am bequemsten ist.</div>
+        </details>
+        <details>
+          <summary>Fahren Sie auch nachts?<span class="plus" aria-hidden="true">+</span></summary>
+          <div class="answer">Ja, wir sind 24 Stunden am Tag und 7 Tage die Woche für Sie da – auch nachts, an Wochenenden und an Feiertagen. Ob frühe Fahrt zum Flughafen oder späte Rückfahrt: Ein Anruf genügt.</div>
+        </details>
+        <details>
+          <summary>Kann ich eine Fahrt im Voraus bestellen?<span class="plus" aria-hidden="true">+</span></summary>
+          <div class="answer">Sehr gerne. Besonders für Flughafentransfers, Geschäftsfahrten und frühe Termine am Morgen können Sie Ihre Fahrt bequem vorbestellen – per Anruf oder über unser WhatsApp-Formular weiter oben.</div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= Kontakt ================= -->
+  <section id="kontakt" style="padding-top:20px">
+    <div class="wrap">
+      <div class="contact-card reveal">
+        <span class="eyebrow" style="justify-content:center">Kontakt</span>
+        <h2>Ihr Taxi ist nur einen Anruf entfernt</h2>
+        <p>Rufen Sie uns an oder schreiben Sie uns per WhatsApp – wir sind rund um die Uhr für Sie da.</p>
+        <a class="big-number" href="tel:+491729666466">+49 172 9666466</a>
+        <div class="contact-cta">
+          <a class="btn btn-call" href="tel:+491729666466">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            Jetzt anrufen
+          </a>
+          <a class="btn btn-wa" href="https://wa.me/491729666466?text=Hallo%20Raiyo%20Taxi%2C%20ich%20m%C3%B6chte%20ein%20Taxi%20bestellen." target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+            WhatsApp schreiben
+          </a>
+        </div>
+        <address>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          Raiyo Taxi · Falkenhorst 61 · Norderstedt · Geöffnet: rund um die Uhr (24/7)
+        </address>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div class="checker" aria-hidden="true"></div>
+
+<!-- ================= Footer ================= -->
+<footer class="site">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a class="brand" href="#start" aria-label="Raiyo Taxi – zur Startseite">
+          <svg class="mark" viewBox="0 0 48 48" role="img" aria-label="Raiyo Taxi Logo">
+            <rect width="48" height="48" rx="11" fill="#ffc400"/>
+            <text x="24" y="29" text-anchor="middle" font-family="Manrope, Arial, sans-serif" font-size="24" font-weight="800" fill="#141414">R</text>
+            <path d="M8 38h6v5H8zM20 38h6v5h-6zM32 38h6v5h-6zM14 42.5h6V47h-6zM26 42.5h6V47h-6z" fill="#141414"/>
+          </svg>
+          <span>Raiyo&nbsp;<em>Taxi</em></span>
+        </a>
+        <p>Ihr Taxi in Norderstedt – Stadtfahrten, Flughafentransfer Hamburg und Geschäftsfahrten, rund um die Uhr.</p>
+      </div>
+      <div class="impressum">
+        <strong>Impressum</strong>
+        Rai yo taxi service<br>
+        Falkenhorst 61<br>
+        Norderstedt<br>
+        Telefon: <a href="tel:+491729666466">+49 172 9666466</a>
+        <!--
+          PLATZHALTER – vor dem Livegang unbedingt ergänzen (NICHT erfundene Daten eintragen):
+          - Name des Inhabers / Vertretungsberechtigten
+          - Vollständige Anschrift inkl. Postleitzahl
+          - E-Mail-Adresse
+          - Umsatzsteuer-Identifikationsnummer (USt-IdNr.), falls vorhanden
+          - Ggf. zuständige Aufsichtsbehörde / Genehmigungsbehörde für den Taxiverkehr
+        -->
+      </div>
+    </div>
+    <div class="copyright">
+      <span>© 2026 Rai yo taxi service – Alle Rechte vorbehalten.</span>
+      <span>Taxi Norderstedt · 24/7 · Tel. +49 172 9666466</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ================= Mobile Aktionsleiste ================= -->
+<div class="actionbar" role="navigation" aria-label="Schnellkontakt">
+  <a class="btn btn-call" href="tel:+491729666466">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+    Anrufen
+  </a>
+  <a class="btn btn-wa" href="https://wa.me/491729666466?text=Hallo%20Raiyo%20Taxi%2C%20ich%20m%C3%B6chte%20ein%20Taxi%20bestellen." target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+    WhatsApp
+  </a>
+</div>
+
+<script>
+document.documentElement.classList.add('js');
+
+/* ---------- Scroll-Reveal ---------- */
+(function () {
+  var els = document.querySelectorAll('.reveal');
+  if (!('IntersectionObserver' in window)) {
+    els.forEach(function (el) { el.classList.add('in'); });
+    return;
+  }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in');
+        io.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  els.forEach(function (el) { io.observe(el); });
+})();
+
+/* ---------- WhatsApp-Buchung ---------- */
+(function () {
+  var form = document.getElementById('bookingForm');
+  var dateInput = document.getElementById('date');
+  // Frühestes Datum: heute
+  var today = new Date();
+  var iso = today.toISOString().split('T')[0];
+  dateInput.min = iso;
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var pickup = document.getElementById('pickup').value.trim();
+    var destination = document.getElementById('destination').value.trim();
+    var dateVal = dateInput.value;
+    var timeVal = document.getElementById('time').value;
+    var persons = document.getElementById('persons').value;
+
+    if (!pickup || !destination || !dateVal || !timeVal) {
+      form.reportValidity();
+      return;
+    }
+
+    var dateText = new Date(dateVal + 'T00:00:00').toLocaleDateString('de-DE', {
+      weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric'
+    });
+
+    var lines = [
+      'Hallo Raiyo Taxi,',
+      'ich möchte eine Fahrt buchen:',
+      '',
+      'Abholort: ' + pickup,
+      'Ziel: ' + destination,
+      'Datum: ' + dateText,
+      'Uhrzeit: ' + timeVal + ' Uhr',
+      'Personen: ' + persons,
+      '',
+      'Bitte bestätigen Sie meine Buchung. Vielen Dank!'
+    ];
+
+    var url = 'https://wa.me/491729666466?text=' + encodeURIComponent(lines.join('\n'));
+    window.open(url, '_blank', 'noopener');
+  });
+})();
+</script>
+
+</body>
+</html>
