@@ -10,6 +10,8 @@
 
 import 'package:flutter/material.dart';
 
+import '../../kiosk/presentation/brand_icons.dart';
+
 /// One plan "flash" screen in the pre-activation funnel: the 5-profile
 /// plan first, then the 10-profile plan, then activation.
 ///
@@ -63,10 +65,13 @@ class PlanScreen extends StatelessWidget {
               ),
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
-          child: Column(
-            children: [
+        // Scrollable: ten badges per row pair plus the details must
+        // never overflow a short screen.
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 28),
+            child: Column(
+              children: [
               const SizedBox(height: 8),
               if (bestValue)
                 Container(
@@ -130,7 +135,7 @@ class PlanScreen extends StatelessWidget {
               const _DetailRow(
                 text: 'Each profile stays isolated from the others',
               ),
-              const Spacer(),
+              const SizedBox(height: 28),
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
@@ -143,7 +148,8 @@ class PlanScreen extends StatelessWidget {
                 child: const Text('I have a license code'),
               ),
               const SizedBox(height: 8),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -171,7 +177,8 @@ class _BadgeRow extends StatelessWidget {
   }
 }
 
-/// Circular brand badge: blue "f" for Facebook, dark note for TikTok.
+/// Circular brand badge with the real logo glyph: the Facebook "f"
+/// disc and the TikTok note — never a generic music note.
 class _BrandBadge extends StatelessWidget {
   final bool facebook;
 
@@ -179,29 +186,7 @@ class _BrandBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const size = 34.0;
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: facebook ? const Color(0xFF1877F2) : Colors.black,
-        shape: BoxShape.circle,
-        border: facebook
-            ? null
-            : Border.all(color: Colors.white24),
-      ),
-      child: Center(
-        child: Text(
-          facebook ? 'f' : '♪',
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 19,
-            height: 1,
-          ),
-        ),
-      ),
-    );
+    return facebook ? const FacebookBadge() : const TikTokBadge();
   }
 }
 

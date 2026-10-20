@@ -72,6 +72,14 @@ android {
             applicationIdSuffix ".alpha"
             versionNameSuffix "-alpha"
             manifestPlaceholders = [appName: "Social Clone Alpha", enableImpeller: "false"]
+            // TEST BUILDS ONLY: the alpha track is signed with the
+            // committed debug keystore (see signingConfigs.debug below)
+            // for EVERY build type, release included, so CI test builds
+            // install over each other and a release test build needs no
+            // real key. This key is public by design and must never
+            // sign a Play Store build — the stable track keeps using
+            // the env-provided release key.
+            signingConfig = signingConfigs.debug
         }
         alphaImpeller {
             dimension "track"

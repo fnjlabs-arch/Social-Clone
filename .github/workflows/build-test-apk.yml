@@ -8,11 +8,15 @@
 #      permanent link (no laptop, no ZIP):
 #      https://github.com/fnjlabs-arch/Social-Clone/releases/download/test-build/social-clone-test.apk
 #      (also kept in the run's Artifacts as a backup)
-# The APK is a DEBUG build, signed with the repo's committed debug keystore
-# (apps/weblibre/android/app/debug.keystore): every test build carries the
-# SAME signing key, so a new test build installs over the previous one —
-# no uninstall needed. It is NOT a Play-Store-ready release build; release
-# builds still go through build.yml with the real upload key.
+# The APK is a RELEASE build of the alpha flavor (optimized, like the
+# real product — debug builds are too slow to judge performance on the
+# budget phones this app targets). It is signed with the repo's
+# committed TEST keystore (apps/weblibre/android/app/debug.keystore,
+# wired to the alpha flavor in build.gradle): every test build carries
+# the SAME signing key, so a new test build installs over the previous
+# one — no uninstall needed. That key is a throwaway test key, never
+# the Play Store key; real releases still go through build.yml with
+# the real upload key on the stable flavor.
 
 name: Build Test APK
 
@@ -128,22 +132,22 @@ jobs:
           IPTPROXY_SOURCE: ${{ runner.temp }}/IPtProxy
         run: melos run build-go-runtime --no-select
 
-      - name: Build debug APK (alpha flavor)
+      - name: Build release APK (alpha flavor)
         working-directory: apps/weblibre
-        run: flutter build apk --debug --flavor alpha --target-platform android-arm,android-arm64,android-x64 --no-tree-shake-icons
+        run: flutter build apk --release --flavor alpha --target-platform android-arm,android-arm64,android-x64 --no-tree-shake-icons
 
       - name: Upload test APK
         uses: actions/upload-artifact@v4
         with:
           name: social-clone-test-apk
-          path: apps/weblibre/build/app/outputs/apk/alpha/debug/*.apk
+          path: apps/weblibre/build/app/outputs/apk/alpha/release/*.apk
 
       - name: Publish direct-download release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          APK="$(ls apps/weblibre/build/app/outputs/apk/alpha/debug/*.apk | head -1)"
+          APK="$(ls apps/weblibre/build/app/outputs/apk/alpha/release/*.apk | head -1)"
           cp "$APK" social-clone-test.apk
           if gh release view test-build >/dev/null 2>&1; then
             gh release upload test-build social-clone-test.apk --clobber

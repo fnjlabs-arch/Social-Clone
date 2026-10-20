@@ -77,6 +77,28 @@ class WebExtensionPromptFeature(
     }
 
     private fun handleAfterInstallationRequest(promptRequest: WebExtensionPromptRequest.AfterInstallation) {
+        // Social Clone: uBlock Origin is seeded silently by the app (see
+        // the kiosk silent setup on the Dart side). Its permission prompt
+        // and its "was added" post-installation dialog must never reach
+        // the user — this is a kiosk, and there is no add-on UI of any
+        // kind. Grant exactly what tapping "Add" with the default
+        // options would grant, and consume the post-installation
+        // request without showing anything. Every other add-on keeps
+        // the normal upstream prompt behaviour below.
+        if (promptRequest.extension.id == UBLOCK_ADDON_ID) {
+            when (promptRequest) {
+                is WebExtensionPromptRequest.AfterInstallation.Permissions -> handlePermissions(
+                    promptRequest = promptRequest,
+                    granted = true,
+                    privateBrowsingAllowed = false,
+                    technicalAndInteractionDataGranted = false,
+                )
+
+                is WebExtensionPromptRequest.AfterInstallation.PostInstallation -> consumePromptRequest()
+            }
+            return
+        }
+
         val installedState = addonManager.toInstalledState(promptRequest.extension)
         val addon = Addon.newFromWebExtension(promptRequest.extension, installedState)
         when (promptRequest) {
@@ -405,5 +427,8 @@ class WebExtensionPromptFeature(
         private const val PERMISSIONS_DIALOG_FRAGMENT_TAG = "ADDONS_PERMISSIONS_DIALOG_FRAGMENT"
         private const val POST_INSTALLATION_DIALOG_FRAGMENT_TAG =
             "ADDONS_INSTALLATION_DIALOG_FRAGMENT"
+
+        /** The one add-on Social Clone seeds silently; see above. */
+        private const val UBLOCK_ADDON_ID = "uBlock0@raymondhill.net"
     }
 }

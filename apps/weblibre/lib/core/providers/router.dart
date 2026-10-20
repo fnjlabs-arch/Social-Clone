@@ -24,7 +24,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:weblibre/core/providers/app_state.dart';
 import 'package:weblibre/core/routing/routes.dart';
 import 'package:weblibre/features/user/domain/providers/profile_auth.dart';
-import 'package:weblibre/features/user/domain/repositories/onboarding.dart';
 
 part 'router.g.dart';
 
@@ -32,30 +31,13 @@ part 'router.g.dart';
 Future<GoRouter> router(Ref ref) async {
   ref.watch(appStateKeyProvider); //Rebuild router on key changes
 
-  final onboardingRepository = ref.read(onboardingRepositoryProvider.notifier);
   unawaited(ref.read(profileAuthStateProvider.notifier).bootstrapFromProfile());
 
-  /// Where the app belongs once it is unlocked: onboarding when it is owed,
-  /// otherwise the browser.
-  ///
-  /// Resolved once, here, rather than re-derived inside `redirect`: the redirect
-  /// runs on every navigation and cannot await a database read, and the answer
-  /// only changes when onboarding completes — which invalidates this provider and
-  /// rebuilds the whole router.
-  String? onboardingLocation;
-
-  final onboardingMandatory = await onboardingRepository.isOutdated();
-
-  if (onboardingMandatory) {
-    final current = await onboardingRepository.getCurrentRevision();
-
-    final route = OnboardingRoute(
-      currentRevision: current ?? -1,
-      targetRevision: OnboardingRepository.targetRevision,
-    );
-
-    onboardingLocation = route.location;
-  }
+  // Social Clone: the upstream onboarding wizard never runs in this
+  // app. Everything it would have asked about is applied silently at
+  // startup instead (see `applyKioskSilentSetup` in features/kiosk),
+  // so an unlocked profile always belongs on the browser — no
+  // onboarding location is ever produced here.
 
   final profileAuthRefreshListenable = ref.watch(profileAuthProvider);
 
@@ -84,10 +66,10 @@ Future<GoRouter> router(Ref ref) async {
         return const LockRoute().location;
       }
 
-      // Unlocked, so onboarding is reachable — and is where an unlocked profile
-      // that still owes it belongs.
+      // Unlocked, so the browser is where this profile belongs
+      // (onboarding is never owed — see the note at the top).
       if (authenticated && isOnLockRoute) {
-        return onboardingLocation ?? const BrowserRoute().location;
+        return const BrowserRoute().location;
       }
 
       if (isOnOnboarding) return null;

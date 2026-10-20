@@ -1,0 +1,20 @@
+! Title: Social Clone — TikTok app-upsell hiders
+! Description: Best-effort cosmetic rules that hide TikTok web's "Open app"
+!              upsells (the persistent top pill and app banners) inside
+!              Social Clone. TikTok rotates its markup regularly, so these
+!              rules are expected to need occasional maintenance.
+! Expires: 30 days
+! Homepage: https://github.com/fnjlabs-arch/Social-Clone
+!
+! The persistent "Open app" pill in TikTok's top bar. These target the
+! leaf button/link itself (its exact label), so they cannot hide page
+! content by accident.
+tiktok.com##button:has-text(/^Open app$/)
+tiktok.com##a:has-text(/^Open app$/)
+tiktok.com##button:has-text(/^Open TikTok$/)
+!
+! App-download banner containers, when TikTok uses these class names.
+! Inert when the classes are absent.
+tiktok.com##[class*="AppBanner"]
+tiktok.com##[class*="app-banner"]
+tiktok.com##[class*="DownloadBanner"]

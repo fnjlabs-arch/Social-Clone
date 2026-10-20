@@ -71,6 +71,7 @@ import 'package:weblibre/features/geckoview/features/tabs/data/providers.dart';
 import 'package:weblibre/features/geckoview/features/tabs/domain/services/local_index_pruner.dart';
 import 'package:weblibre/features/geckoview/features/tabs/domain/services/local_index_settings_sync.dart';
 import 'package:weblibre/features/intent_gatekeeper/domain/services/native_gatekeeper_replicator.dart';
+import 'package:weblibre/features/kiosk/domain/silent_setup.dart';
 import 'package:weblibre/features/proxy/domain/repositories/singbox_proxy_logs.dart';
 import 'package:weblibre/features/proxy/domain/repositories/singbox_proxy_profiles.dart';
 import 'package:weblibre/features/proxy/domain/services/proxy_autostart.dart';
@@ -495,6 +496,15 @@ class _MainWidget extends HookConsumerWidget {
         await secureStorageClaim;
 
         await ref.read(appInitializationServiceProvider.notifier).initialize();
+
+        // Social Clone: silently apply, once per profile, everything
+        // upstream's onboarding wizard would have asked about — privacy
+        // defaults, uBlock Origin with its annoyance filter lists, and
+        // app-link handoffs off. The wizard itself never runs in this
+        // app. Fire and forget: a slow add-on install must not hold up
+        // startup, and the setup retries on the next launch if it
+        // cannot complete.
+        unawaited(applyKioskSilentSetup(ref));
 
         Future<void> preloadUrlCleanerCatalog() async {
           if (!generalSettings.urlCleanerEnabled) {

@@ -74,6 +74,8 @@ import 'package:weblibre/features/geckoview/features/tabs/domain/providers/selec
 import 'package:weblibre/features/geckoview/features/tabs/domain/repositories/container.dart';
 import 'package:weblibre/features/geckoview/features/tabs/domain/repositories/tab.dart';
 import 'package:weblibre/features/keyboard_shortcuts/presentation/widgets/browser_keyboard_shortcuts.dart';
+import 'package:weblibre/features/kiosk/domain/kiosk_home_level.dart';
+import 'package:weblibre/features/kiosk/domain/kiosk_mode.dart';
 import 'package:weblibre/features/proxy/data/proxy_connection.dart';
 import 'package:weblibre/features/proxy/domain/repositories/container_proxy.dart';
 import 'package:weblibre/features/proxy/domain/services/container_routing_snapshot.dart';
@@ -1482,7 +1484,11 @@ class BrowserScreen extends HookConsumerWidget {
     // reflow plus, under hybrid composition, a native surface recreation, all
     // in the same frame as the sheet's slide-in.
     final Size bottomAppBarContentSize;
-    if (isSmallWebActive) {
+    if (kKioskMode) {
+      // Social Clone kiosk: no bottom bar is ever built, so no space
+      // is reserved for one — the web content runs edge to edge.
+      bottomAppBarContentSize = Size.zero;
+    } else if (isSmallWebActive) {
       bottomAppBarContentSize = const Size.fromHeight(
         SmallWebBrowserOverlay.barHeight,
       );
@@ -1517,15 +1523,17 @@ class BrowserScreen extends HookConsumerWidget {
 
     // Calculate top toolbar size for browser offset and progress indicator
     final topSafeArea = MediaQuery.paddingOf(context).top;
-    final topAppBarContentSize = BrowserTopAppBar(
-      showMainToolbar: tabBarPosition == TabBarPosition.top,
-      showContextualToolbar: showContextualToolbar,
-      quickTabSwitcherRowCount: quickTabSwitcherRowCount,
-      quickTabSwitcherPlacement: quickTabSwitcherPlacement,
-      isSmallWebMode: isSmallWebActive,
-      enableGestures: !isSmallWebActive,
-      suppressMainToolbar: suppressMainToolbarForHome,
-    ).preferredSize;
+    final topAppBarContentSize = kKioskMode
+        ? Size.zero
+        : BrowserTopAppBar(
+            showMainToolbar: tabBarPosition == TabBarPosition.top,
+            showContextualToolbar: showContextualToolbar,
+            quickTabSwitcherRowCount: quickTabSwitcherRowCount,
+            quickTabSwitcherPlacement: quickTabSwitcherPlacement,
+            isSmallWebMode: isSmallWebActive,
+            enableGestures: !isSmallWebActive,
+            suppressMainToolbar: suppressMainToolbarForHome,
+          ).preferredSize;
     final topAppBarTotalHeight = topAppBarContentSize.height + topSafeArea;
 
     // Get pixel ratio for converting logical pixels to physical pixels
@@ -1794,7 +1802,8 @@ class BrowserScreen extends HookConsumerWidget {
               // Layer 2: Bottom Toolbar (overlay, slides in/out)
               // In small web mode, show the discovery overlay instead.
               // Skipped entirely for the side rail (Layer 3b below).
-              if (!isRail)
+              // Social Clone kiosk: never built — there is no toolbar.
+              if (!isRail && !kKioskMode)
                 Positioned(
                   // Clear of the side insets, as the top bar is through its
                   // SafeArea: in landscape a navigation bar of buttons moves
@@ -1814,7 +1823,8 @@ class BrowserScreen extends HookConsumerWidget {
                 ),
 
               // Layer 3: Top Toolbar (overlay, slides in/out) - only when position is top
-              if (tabBarPosition == TabBarPosition.top)
+              // Social Clone kiosk: never built — there is no toolbar.
+              if (tabBarPosition == TabBarPosition.top && !kKioskMode)
                 Positioned(
                   left: 0,
                   right: 0,
@@ -1831,7 +1841,8 @@ class BrowserScreen extends HookConsumerWidget {
 
               // Layer 3b: Side rail (vertical, left/right). No auto-hide; it
               // slides horizontally out of view only on manual dismiss.
-              if (isRail)
+              // Social Clone kiosk: never built — there is no rail.
+              if (isRail && !kKioskMode)
                 Positioned(
                   top: 0,
                   bottom: 0,
@@ -1851,7 +1862,9 @@ class BrowserScreen extends HookConsumerWidget {
                 ),
 
               // Layer 4: FAB (draggable via long press)
-              _FabPositioner(
+              // Social Clone kiosk: never built — no new-tab FAB.
+              if (!kKioskMode)
+                _FabPositioner(
                 selectedTabId: selectedTabId,
                 tabInFullScreen: tabInFullScreen,
                 tabBarPosition: tabBarPosition,
@@ -2081,6 +2094,20 @@ class _Browser extends HookConsumerWidget {
                 return true;
               }
 
+              // Social Clone kiosk: while the home surface is up, Back
+              // belongs to the home's own staircase — profile home →
+              // profiles list — never to the tab underneath, whose
+              // page-level handling (stop loading, reader, history)
+              // would otherwise swallow the press. On the profiles list
+              // itself the press falls through to the double-back-to-
+              // exit handling below.
+              final kioskHomeShowing =
+                  kKioskMode && ref.read(shouldShowBrowserHomeProvider);
+              if (kioskHomeShowing &&
+                  ref.read(kioskHomeLevelProvider.notifier).stepBack()) {
+                return true;
+              }
+
               if (tabState?.isFullScreen == true) {
                 await ref.read(selectedTabSessionProvider).exitFullscreen();
                 return true;
@@ -2092,14 +2119,15 @@ class _Browser extends HookConsumerWidget {
                   .read(toolbarVisibilityControllerProvider(tabId).notifier)
                   .show();
 
-              if (tabState?.isLoading == true) {
+              if (!kioskHomeShowing && tabState?.isLoading == true) {
                 lastBackButtonPress.value = null;
 
                 final controller = ref.read(selectedTabSessionProvider);
 
                 await controller.stopLoading();
                 return true;
-              } else if (tabState?.readerableState.active == true) {
+              } else if (!kioskHomeShowing &&
+                  tabState?.readerableState.active == true) {
                 lastBackButtonPress.value = null;
 
                 await ref
@@ -2107,9 +2135,8 @@ class _Browser extends HookConsumerWidget {
                     .toggleReaderView(false);
 
                 return true;
-              } else if (ref
-                  .read(tabHistoryStateProvider(tabState?.id))
-                  .canGoBack) {
+              } else if (!kioskHomeShowing &&
+                  ref.read(tabHistoryStateProvider(tabState?.id)).canGoBack) {
                 lastBackButtonPress.value = null;
 
                 final controller = ref.read(selectedTabSessionProvider);
