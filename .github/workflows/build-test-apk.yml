@@ -51,7 +51,13 @@ jobs:
             echo "Missing weblibre.ndkVersion in apps/weblibre/android/gradle.properties" >&2
             exit 1
           fi
+          set +e
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$ANDROID_NDK_VERSION"
+          sdkmanager_status=${PIPESTATUS[1]}
+          set -e
+          if [[ $sdkmanager_status -ne 0 ]]; then
+            exit "$sdkmanager_status"
+          fi
           test -f "$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION/source.properties"
           {
             echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION"
