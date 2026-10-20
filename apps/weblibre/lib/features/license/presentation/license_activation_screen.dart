@@ -19,7 +19,12 @@ import '../domain/license_repository.dart';
 /// from their teacher. Until a valid code is stored, the rest of the app
 /// stays hidden behind [LicenseGate].
 class LicenseActivationScreen extends HookConsumerWidget {
-  const LicenseActivationScreen({super.key});
+  /// Called when the user taps back (returns to the welcome screen).
+  /// There is no Navigator above the license gate, so the gate owns
+  /// this switching.
+  final VoidCallback? onBack;
+
+  const LicenseActivationScreen({this.onBack, super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -62,6 +67,12 @@ class LicenseActivationScreen extends HookConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Activate License'),
+        leading: onBack == null
+            ? null
+            : IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: onBack,
+              ),
       ),
       body: SafeArea(
         child: Padding(

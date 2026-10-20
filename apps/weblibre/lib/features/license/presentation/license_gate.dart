@@ -9,13 +9,20 @@
  */
 
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../domain/license_repository.dart';
+import 'license_activation_screen.dart';
 import 'welcome_screen.dart';
 
-/// App-level gate: until a license code has been activated on this device,
-/// the whole app UI stays hidden behind the welcome + activation flow.
+/// Wraps the whole app: without an activated license the user only sees
+/// the welcome screen and the license activation screen; the real app is
+/// not built at all.
+///
+/// The gate lives above the app router (MaterialApp.builder), so no
+/// Navigator is available here — welcome ↔ activation switching is done
+/// with local state, not routes.
 class LicenseGate extends HookConsumerWidget {
   final Widget child;
 
@@ -24,13 +31,21 @@ class LicenseGate extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final license = ref.watch(licenseRepositoryProvider);
+    final showActivation = useState(false);
+
+    Widget locked() {
+      return showActivation.value
+          ? LicenseActivationScreen(
+              onBack: () => showActivation.value = false,
+            )
+          : WelcomeScreen(onActivate: () => showActivation.value = true);
+    }
 
     return license.when(
-      data: (state) => state == null ? const WelcomeScreen() : child,
-      loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      ),
-      error: (_, _) => const WelcomeScreen(),
+      data: (state) => state != null ? child : locked(),
+      // While the stored license is being read, stay on the locked side.
+      loading: locked,
+      error: (_, _) => locked(),
     );
   }
 }

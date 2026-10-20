@@ -10,12 +10,15 @@
 
 import 'package:flutter/material.dart';
 
-import 'license_activation_screen.dart';
-
 /// First screen an unlicensed user sees: what Social Clone gives them,
 /// then a button into the license activation.
 class WelcomeScreen extends StatelessWidget {
-  const WelcomeScreen({super.key});
+  /// Called when the user taps "Activate License". Navigation is owned
+  /// by the caller (the license gate lives above the app router, so no
+  /// Navigator is available here).
+  final VoidCallback onActivate;
+
+  const WelcomeScreen({required this.onActivate, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -73,13 +76,7 @@ class WelcomeScreen extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const LicenseActivationScreen(),
-                      ),
-                    );
-                  },
+                  onPressed: onActivate,
                   child: const Text('Activate License'),
                 ),
               ),
