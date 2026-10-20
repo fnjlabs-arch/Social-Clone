@@ -3,7 +3,11 @@
 # How to use:
 #   1. Open the repo on GitHub -> Actions tab -> "Build Test APK".
 #   2. Click "Run workflow".
-#   3. Wait ~20-40 min, then download the APK from the run's Artifacts section.
+#   3. Wait ~20-40 min. The APK is published to the fixed "test-build"
+#      release, so it can be downloaded straight onto a phone from one
+#      permanent link (no laptop, no ZIP):
+#      https://github.com/fnjlabs-arch/Social-Clone/releases/download/test-build/social-clone-test.apk
+#      (also kept in the run's Artifacts as a backup)
 # The APK is a DEBUG build (auto-signed): installs fine for testing, but it is
 # NOT a Play-Store-ready release build. Release builds still go through build.yml.
 
@@ -16,7 +20,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
     steps:
       - name: Free Disk Space
         uses: jlumbroso/free-disk-space@main
@@ -130,3 +134,18 @@ jobs:
         with:
           name: social-clone-test-apk
           path: apps/weblibre/build/app/outputs/apk/alpha/debug/*.apk
+
+      - name: Publish direct-download release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          APK="$(ls apps/weblibre/build/app/outputs/apk/alpha/debug/*.apk | head -1)"
+          cp "$APK" social-clone-test.apk
+          if gh release view test-build >/dev/null 2>&1; then
+            gh release upload test-build social-clone-test.apk --clobber
+          else
+            gh release create test-build social-clone-test.apk \
+              --title "Social Clone - Test APK (latest)" \
+              --notes "Latest test build. Open the direct link on your phone to download and install social-clone-test.apk."
+          fi
