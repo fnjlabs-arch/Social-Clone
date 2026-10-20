@@ -105,7 +105,7 @@ class ProfileRepository extends _$ProfileRepository {
     // The license gate already blocks unlicensed use of the app; this is the
     // second line of defense at the exact point of creation.
     final maxProfiles =
-        ref.read(licenseRepositoryProvider).valueOrNull?.tier.maxProfiles ?? 0;
+        ref.read(licenseRepositoryProvider).value?.tier.maxProfiles ?? 0;
     final existing = await future;
     if (existing.length >= maxProfiles) {
       throw ProfileLimitReachedException(maxProfiles);
