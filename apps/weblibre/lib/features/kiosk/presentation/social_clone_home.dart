@@ -13,7 +13,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../geckoview/domain/repositories/tab.dart';
 import '../../geckoview/features/tabs/data/entities/tab_mode.dart';
-import 'allowlist.dart';
+import '../domain/allowlist.dart';
 
 /// Social Clone home: two big buttons, TikTok and Facebook. No address bar,
 /// no search, nothing else. Each tap opens the site in a new regular tab.

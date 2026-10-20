@@ -58,11 +58,7 @@ class InvalidLicenseCodeException implements Exception {
 /// Validation is offline (format + checksum). When the Social Clone
 /// dashboard API is live, [activate] should POST the code there first and
 /// only fall back to offline validation when the network is unavailable.
-class LicenseRepository extends StateNotifier<AsyncValue<LicenseState?>> {
-  LicenseRepository() : super(const AsyncValue.loading()) {
-    _load();
-  }
-
+class LicenseRepository extends AsyncNotifier<LicenseState?> {
   static const _fileName = 'social_clone_license.json';
 
   Future<File> _licenseFile() async {
@@ -70,18 +66,18 @@ class LicenseRepository extends StateNotifier<AsyncValue<LicenseState?>> {
     return File('${dir.path}/$_fileName');
   }
 
-  Future<void> _load() async {
+  @override
+  Future<LicenseState?> build() async {
     try {
       final file = await _licenseFile();
       if (!await file.exists()) {
-        state = const AsyncValue.data(null);
-        return;
+        return null;
       }
       final json = jsonDecode(await file.readAsString()) as Map<String, dynamic>;
-      state = AsyncValue.data(LicenseState.fromJson(json));
+      return LicenseState.fromJson(json);
     } catch (_) {
       // A damaged license file must not brick the app: treat as unlicensed.
-      state = const AsyncValue.data(null);
+      return null;
     }
   }
 
@@ -103,12 +99,12 @@ class LicenseRepository extends StateNotifier<AsyncValue<LicenseState?>> {
     );
     final file = await _licenseFile();
     await file.writeAsString(jsonEncode(license.toJson()));
-    state = AsyncValue.data(license);
+    state = AsyncData(license);
     return tier;
   }
 }
 
 final licenseRepositoryProvider =
-    StateNotifierProvider<LicenseRepository, AsyncValue<LicenseState?>>(
-      (ref) => LicenseRepository(),
+    AsyncNotifierProvider<LicenseRepository, LicenseState?>(
+      LicenseRepository.new,
     );
