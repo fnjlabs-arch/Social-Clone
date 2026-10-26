@@ -16,6 +16,12 @@ import '../../../core/logger.dart';
 import '../../geckoview/features/browser/domain/services/browser_addon.dart';
 import '../../onboarding/presentation/onboarding_defaults.dart';
 import '../../user/data/models/ublock_filter_list_settings.dart';
+// The copyWith extensions for EngineSettings/GeneralSettings live in these
+// models' generated part files and are only visible when the model libraries
+// are imported directly — importing the repositories alone does not bring
+// them into scope, which is what broke the previous release build.
+import '../../user/data/models/engine_settings.dart';
+import '../../user/data/models/general_settings.dart';
 import '../../user/domain/repositories/engine_settings.dart';
 import '../../user/domain/repositories/general_settings.dart';
 import '../../user/domain/repositories/onboarding.dart';
