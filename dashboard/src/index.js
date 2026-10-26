@@ -184,36 +184,76 @@ async function handleCreateTeacher(env, request) {
   return json({ ok: true, id, username: String(username).trim() });
 }
 
+// Report counts — definitions (see README "What the numbers mean"):
+//   issued      — every code ever generated in this scope.
+//   sold        — same number as issued. The dashboard tracks generation
+//                 and redemption, NOT payments; teachers buy codes in
+//                 bulk upfront in this product, so a code issued to a
+//                 teacher is a code sold. This is NOT payment tracking.
+//   activated   — status 'used': redeemed and bound to a device.
+//   unused      — status 'unused', including expired-but-unused codes.
+//   remaining   — status 'unused' AND not expired: codes still usable.
+//   deactivated — status 'deactivated' (admin-disabled).
+//   expired     — expires_at set and in the past, status unused or used.
+//                 A deactivated code counts as deactivated, not expired.
+// `used` is kept as an alias of `activated` for the older report shape.
 async function reportFor(env, teacherId) {
   const rows = await env.DB.prepare(
-    'SELECT tier, status, COUNT(*) AS n FROM licenses ' +
-      (teacherId ? 'WHERE teacher_id = ? ' : '') +
-      'GROUP BY tier, status',
+    'SELECT tier, status, expires_at FROM licenses ' +
+      (teacherId ? 'WHERE teacher_id = ? ' : ''),
   )
     .bind(...(teacherId ? [teacherId] : []))
     .all();
-  const report = { issued: 0, used: 0, remaining: 0, by_tier: {} };
+  const now = Date.now();
+  const report = {
+    issued: 0, sold: 0, activated: 0, used: 0,
+    unused: 0, remaining: 0, deactivated: 0, expired: 0, by_tier: {},
+  };
   for (const r of rows.results || []) {
-    report.by_tier[r.tier] = report.by_tier[r.tier] || { issued: 0, used: 0, remaining: 0 };
-    report.by_tier[r.tier].issued += r.n;
-    report.issued += r.n;
+    const isExpired =
+      r.expires_at != null && r.expires_at < now && r.status !== 'deactivated';
+    const tier = (report.by_tier[r.tier] =
+      report.by_tier[r.tier] || { issued: 0, used: 0, remaining: 0, deactivated: 0, expired: 0 });
+    tier.issued += 1;
+    report.issued += 1;
     if (r.status === 'used') {
-      report.by_tier[r.tier].used += r.n;
-      report.used += r.n;
+      tier.used += 1;
+      report.activated += 1;
+      report.used += 1;
+    } else if (r.status === 'deactivated') {
+      tier.deactivated += 1;
+      report.deactivated += 1;
     } else {
-      report.by_tier[r.tier].remaining += r.n;
-      report.remaining += r.n;
+      report.unused += 1;
+      if (!isExpired) {
+        tier.remaining += 1;
+        report.remaining += 1;
+      }
+    }
+    if (isExpired) {
+      tier.expired += 1;
+      report.expired += 1;
     }
   }
+  report.sold = report.issued;
   return report;
 }
 
 async function handleGenerate(env, request) {
   const gate = await requireRole(env, request, 'admin');
   if (gate.error) return gate.error;
-  const { teacher_id, tier, count } = await readJson(request);
+  const { teacher_id, tier, count, expires_at } = await readJson(request);
   if (!TIERS[tier] || ![10, 20, 100].includes(Number(count))) {
     return json({ ok: false, error: 'tier must be SC5 or SC10 and count must be 10, 20 or 100' }, 400);
+  }
+  // Optional expiry: epoch milliseconds, or an ISO date string. Null
+  // (the default) means the code never expires, as all codes did before.
+  let expiresAt = null;
+  if (expires_at !== undefined && expires_at !== null) {
+    expiresAt = typeof expires_at === 'number' ? expires_at : Date.parse(expires_at);
+    if (!Number.isFinite(expiresAt)) {
+      return json({ ok: false, error: 'expires_at must be epoch milliseconds or an ISO date' }, 400);
+    }
   }
   const teacher = await env.DB.prepare("SELECT id FROM users WHERE id = ? AND role = 'teacher'")
     .bind(teacher_id)
@@ -227,14 +267,14 @@ async function handleGenerate(env, request) {
     const dup = await env.DB.prepare('SELECT code FROM licenses WHERE code = ?').bind(code).first();
     if (dup) continue;
     await env.DB.prepare(
-      "INSERT INTO licenses (code, tier, max_profiles, teacher_id, status, created_at) VALUES (?, ?, ?, ?, 'unused', ?)",
+      "INSERT INTO licenses (code, tier, max_profiles, teacher_id, status, expires_at, created_at) VALUES (?, ?, ?, ?, 'unused', ?, ?)",
     )
-      .bind(code, tier, TIERS[tier].maxProfiles, teacher_id, Date.now())
+      .bind(code, tier, TIERS[tier].maxProfiles, teacher_id, expiresAt, Date.now())
       .run();
     codes.push(code);
   }
   if (codes.length < Number(count)) return json({ ok: false, error: 'could not generate enough unique codes, try again' }, 500);
-  return json({ ok: true, tier, count: codes.length, codes });
+  return json({ ok: true, tier, count: codes.length, expires_at: expiresAt, codes });
 }
 
 async function handleListLicenses(env, request, url) {
@@ -243,14 +283,14 @@ async function handleListLicenses(env, request, url) {
   const { user } = gate;
   const status = url.searchParams.get('status');
   const teacherId = user.role === 'teacher' ? user.id : url.searchParams.get('teacher_id');
-  let sql = 'SELECT code, tier, max_profiles, teacher_id, status, device_id, redeemed_at, created_at FROM licenses';
+  let sql = 'SELECT code, tier, max_profiles, teacher_id, status, device_id, redeemed_at, expires_at, created_at FROM licenses';
   const args = [];
   const clauses = [];
   if (teacherId) {
     clauses.push('teacher_id = ?');
     args.push(teacherId);
   }
-  if (status === 'used' || status === 'unused') {
+  if (status === 'used' || status === 'unused' || status === 'deactivated') {
     clauses.push('status = ?');
     args.push(status);
   }
@@ -273,6 +313,45 @@ async function handleTeachers(env, request) {
   return json({ ok: true, teachers });
 }
 
+// Admin-only: POST /api/v1/admin/licenses/:code/status
+//   Body: { "action": "deactivate" | "reactivate" }
+//   deactivate: an unused OR bound (used) code becomes 'deactivated'.
+//     Its device_id/redeemed_at are kept for audit, but redeem is
+//     rejected with code_deactivated until reactivated.
+//   reactivate: a 'deactivated' code returns to 'unused' with its device
+//     binding cleared (device_id and redeemed_at set to NULL), so it can
+//     be activated fresh on any device. Reactivating a code that is not
+//     deactivated is a clear 400 error ('not_deactivated'), not a silent
+//     no-op. Deactivating an already-deactivated code is idempotent
+//     (200, current status) — disabling twice is harmless.
+//   HONEST LIMIT: this does NOT instantly lock an already-activated
+//   device, because the app does not phone home continuously. It blocks
+//   (re)activation and any future redeem of that code.
+async function handleLicenseStatus(env, request, code) {
+  const gate = await requireRole(env, request, 'admin');
+  if (gate.error) return gate.error;
+  const { action } = await readJson(request);
+  const trimmed = decodeURIComponent(code).trim();
+  const row = await env.DB.prepare('SELECT * FROM licenses WHERE code = ?').bind(trimmed).first();
+  if (!row) return json({ ok: false, error: 'code_not_found', message: 'No such code.' }, 404);
+  if (action === 'deactivate') {
+    await env.DB.prepare("UPDATE licenses SET status = 'deactivated' WHERE code = ?").bind(trimmed).run();
+    return json({ ok: true, code: trimmed, status: 'deactivated' });
+  }
+  if (action === 'reactivate') {
+    if (row.status !== 'deactivated') {
+      return json({ ok: false, error: 'not_deactivated', message: 'This code is not deactivated.' }, 400);
+    }
+    await env.DB.prepare(
+      "UPDATE licenses SET status = 'unused', device_id = NULL, redeemed_at = NULL WHERE code = ?",
+    )
+      .bind(trimmed)
+      .run();
+    return json({ ok: true, code: trimmed, status: 'unused' });
+  }
+  return json({ ok: false, error: 'action must be deactivate or reactivate' }, 400);
+}
+
 // The endpoint the app's activate() TODO names: POST /api/v1/licenses/redeem.
 // The app code specifies the path only — no request/response shape — so this
 // contract is the dashboard's own, and app integration must use it as-is:
@@ -281,8 +360,14 @@ async function handleTeachers(env, request) {
 //               tier: "SC5"|"SC10", max_profiles: 5|10 }
 //   Rejected: 409 { ok: false, error: "already_in_use",
 //               message: "This code is already in use on another device." }
+//   Deactivated: 403 { ok: false, error: "code_deactivated", ... }
+//   Expired: 403 { ok: false, error: "code_expired", ... }
 //   Unknown/invalid code: 404 { ok: false, error: "invalid_code", ... }
-// Re-pasting on the SAME bound device is idempotent (no second activation).
+// Re-pasting on the SAME bound device is idempotent (no second activation),
+// unless the code has since been deactivated or expired — those reject.
+// HONEST LIMIT: the app does not phone home continuously, so deactivating
+// a code does NOT instantly lock an already-activated device offline; it
+// blocks (re)activation and any future redeem of that code.
 async function handleRedeem(env, request) {
   const { code, device_id } = await readJson(request);
   if (!code || !device_id) {
@@ -293,6 +378,22 @@ async function handleRedeem(env, request) {
   const trimmed = String(code).trim();
   const row = await env.DB.prepare('SELECT * FROM licenses WHERE code = ?').bind(trimmed).first();
   if (!row) return json({ ok: false, error: 'invalid_code', message: 'This code was not issued by the dashboard.' }, 404);
+  // Admin action wins over expiry: a deactivated code is rejected as
+  // deactivated even if it also expired.
+  if (row.status === 'deactivated') {
+    return json(
+      { ok: false, error: 'code_deactivated', message: 'This code has been deactivated. Please check with your teacher.' },
+      403,
+    );
+  }
+  // Expiry is checked before the idempotent same-device case: an
+  // expired code is no longer valid even on the device it bound to.
+  if (row.expires_at != null && row.expires_at < Date.now()) {
+    return json(
+      { ok: false, error: 'code_expired', message: 'This code has expired. Please check with your teacher.' },
+      403,
+    );
+  }
   if (row.status === 'used' && row.device_id && row.device_id !== device_id) {
     return json(
       { ok: false, error: 'already_in_use', message: 'This code is already in use on another device.' },
@@ -340,10 +441,15 @@ const UI = '<!doctype html><html lang="en"><head><meta charset="utf-8">'
   + 'function api(path, method, body){ var h = {"Content-Type":"application/json"}; if(token) h["Authorization"] = "Bearer " + token;'
   + ' return fetch(path, {method: method || "GET", headers: h, body: body ? JSON.stringify(body) : undefined}).then(function(r){ return r.json(); }); }'
   + 'function showMsg(id, o){ document.getElementById(id).textContent = o.ok ? "Done." : ("Error: " + (o.error || o.message || "failed")); }'
-  + 'function renderCodes(list){ var html = "<table><tr><th>Code</th><th>Tier</th><th>Status</th><th>Device</th></tr>";'
-  + ' list.forEach(function(c){ html += "<tr><td>" + c.code + "</td><td>" + c.tier + "</td><td>" + c.status + "</td><td>" + (c.device_id || "-") + "</td></tr>"; });'
+  + 'function renderCodes(list, isAdmin){ var html = "<table><tr><th>Code</th><th>Tier</th><th>Status</th><th>Device</th><th>Expires</th>";'
+  + ' if(isAdmin) html += "<th>Action</th>"; html += "</tr>";'
+  + ' list.forEach(function(c){ html += "<tr><td>" + c.code + "</td><td>" + c.tier + "</td><td>" + c.status + "</td><td>" + (c.device_id || "-") + "</td><td>" + (c.expires_at ? new Date(c.expires_at).toLocaleDateString() : "never") + "</td>";'
+  + ' if(isAdmin){ if(c.status === "deactivated") html += "<td><button onclick=\\"setLicenseStatus(\\"" + c.code + "\\", \\"reactivate\\")\\">Reactivate</button></td>";'
+  + ' else html += "<td><button onclick=\\"setLicenseStatus(\\"" + c.code + "\\", \\"deactivate\\")\\">Deactivate</button></td>"; }'
+  + ' html += "</tr>"; });'
   + ' document.getElementById("codes").innerHTML = html + "</table>"; }'
-  + 'function renderReport(el, r){ document.getElementById(el).innerHTML = "Issued: " + r.issued + " &nbsp; Used: " + r.used + " &nbsp; Remaining: " + r.remaining; }'
+  + 'function renderReport(el, r){ document.getElementById(el).innerHTML = "Issued / sold: " + r.issued + " &nbsp; Activated: " + r.activated + " &nbsp; Remaining: " + r.remaining + " &nbsp; Deactivated: " + r.deactivated + " &nbsp; Expired: " + r.expired; }'
+  + 'function setLicenseStatus(code, action){ api("/api/v1/admin/licenses/" + encodeURIComponent(code) + "/status", "POST", {action: action}).then(function(o){ if(!o.ok) alert("Error: " + (o.error || "failed")); refresh(); }); }'
   + 'function refresh(){ if(!token) return; document.getElementById("loginCard").style.display = "none"; document.getElementById("app").style.display = "block";'
   + ' document.getElementById("who").textContent = "Logged in as " + localStorage.getItem("sc_user") + " (" + role + ")";'
   + ' if(role === "admin"){ document.getElementById("adminPanel").style.display = "block";'
@@ -351,7 +457,7 @@ const UI = '<!doctype html><html lang="en"><head><meta charset="utf-8">'
   + '   (o.teachers || []).forEach(function(t){ var op = document.createElement("option"); op.value = t.id; op.textContent = t.username; s.appendChild(op); }); });'
   + '  api("/api/v1/admin/report").then(function(o){ renderReport("adminReport", o.report); }); }'
   + ' else { document.getElementById("teacherPanel").style.display = "block"; api("/api/v1/teacher/report").then(function(o){ renderReport("teacherReport", o.report); }); }'
-  + ' api("/api/v1/licenses").then(function(o){ renderCodes(o.licenses || []); }); }'
+  + ' api("/api/v1/licenses").then(function(o){ renderCodes(o.licenses || [], role === "admin"); }); }'
   + 'function doSetup(){ var u = document.getElementById("setupUser").value; var p = document.getElementById("setupPass").value;'
   + ' api("/api/v1/setup", "POST", {username: u, password: p}).then(function(o){ showMsg("setupMsg", o); if(o.ok) init(); }); }'
   + 'function doLogin(){ var u = document.getElementById("loginUser").value; var p = document.getElementById("loginPass").value;'
@@ -399,6 +505,10 @@ export default {
         return json({ ok: true, report: await reportFor(env, gate.user.id) });
       }
       if (path === '/api/v1/licenses' && method === 'GET') return handleListLicenses(env, request, url);
+      if (path.startsWith('/api/v1/admin/licenses/') && path.endsWith('/status') && method === 'POST') {
+        const code = path.slice('/api/v1/admin/licenses/'.length, -'/status'.length);
+        return handleLicenseStatus(env, request, code);
+      }
       if (path === '/api/v1/licenses/redeem' && method === 'POST') return handleRedeem(env, request);
       return json({ ok: false, error: 'not found' }, 404);
     } catch (e) {

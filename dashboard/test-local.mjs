@@ -159,4 +159,75 @@ check('admin report 30 issued / 2 used / 28 remaining', r.data.report.issued ===
 r = await call('/api/v1/licenses', 'GET', null, null);
 check('licenses list requires login', r.status === 401);
 
+// ---- Stats, deactivate/reactivate, expiry (added 2026-10-26) ----
+// State at this point: teacher1 10 SC5 (codeA used on device-A),
+// teacher2 20 SC10 (one used on device-C). Totals: 30 / 2 used.
+r = await call('/api/v1/admin/report', 'GET', null, adminToken);
+check(
+  'admin report new fields: sold = issued, activated = used, no deactivated/expired yet',
+  r.data.report.issued === 30 && r.data.report.sold === 30 && r.data.report.activated === 2 &&
+    r.data.report.used === 2 && r.data.report.unused === 28 && r.data.report.remaining === 28 &&
+    r.data.report.deactivated === 0 && r.data.report.expired === 0,
+);
+const codeB = codes[1];
+r = await call('/api/v1/admin/licenses/' + encodeURIComponent(codeB) + '/status', 'POST', { action: 'deactivate' }, adminToken);
+check('deactivate unused code succeeds', r.status === 200 && r.data.status === 'deactivated');
+r = await call('/api/v1/licenses/redeem', 'POST', { code: codeB, device_id: 'device-A' });
+check('redeem of deactivated code rejected with code_deactivated', r.status === 403 && r.data.error === 'code_deactivated');
+r = await call('/api/v1/admin/report', 'GET', null, adminToken);
+check('admin report after deactivate: deactivated 1, remaining 27', r.data.report.deactivated === 1 && r.data.report.remaining === 27);
+r = await call('/api/v1/admin/licenses/' + encodeURIComponent(codeB) + '/status', 'POST', { action: 'reactivate' }, adminToken);
+check('reactivate returns code to unused', r.status === 200 && r.data.status === 'unused');
+r = await call('/api/v1/licenses/redeem', 'POST', { code: codeB, device_id: 'device-X' });
+check('reactivated code activates fresh', r.status === 200 && r.data.status === 'activated');
+r = await call('/api/v1/admin/licenses/' + encodeURIComponent(codeA) + '/status', 'POST', { action: 'deactivate' }, adminToken);
+check('deactivate bound code succeeds', r.status === 200 && r.data.status === 'deactivated');
+r = await call('/api/v1/licenses/redeem', 'POST', { code: codeA, device_id: 'device-A' });
+check('redeem of deactivated bound code rejected even on its own device', r.status === 403 && r.data.error === 'code_deactivated');
+r = await call('/api/v1/licenses?status=deactivated', 'GET', null, adminToken);
+check(
+  'deactivated filter lists the bound code with its old device kept for audit',
+  r.data.licenses.some((c) => c.code === codeA && c.device_id === 'device-A'),
+);
+r = await call('/api/v1/admin/licenses/' + encodeURIComponent(codeA) + '/status', 'POST', { action: 'reactivate' }, adminToken);
+check('reactivate bound code succeeds', r.status === 200 && r.data.status === 'unused');
+r = await call('/api/v1/licenses', 'GET', null, teacherToken);
+check(
+  'reactivated code shows unused with binding cleared',
+  r.data.licenses.find((c) => c.code === codeA).status === 'unused' &&
+    r.data.licenses.find((c) => c.code === codeA).device_id === null,
+);
+r = await call('/api/v1/licenses/redeem', 'POST', { code: codeA, device_id: 'device-B' });
+check('reactivated code activates on a different device (binding was cleared)', r.status === 200 && r.data.status === 'activated');
+r = await call('/api/v1/admin/licenses/' + encodeURIComponent(codeA) + '/status', 'POST', { action: 'reactivate' }, adminToken);
+check('reactivating a non-deactivated code is a clear 400', r.status === 400 && r.data.error === 'not_deactivated');
+r = await call('/api/v1/admin/licenses/' + encodeURIComponent(makeCode('SC5')) + '/status', 'POST', { action: 'deactivate' }, adminToken);
+check('deactivate unknown code is 404', r.status === 404 && r.data.error === 'code_not_found');
+r = await call('/api/v1/admin/licenses/' + encodeURIComponent(codes[2]) + '/status', 'POST', { action: 'deactivate' }, teacherToken);
+check('teacher cannot deactivate (admin only)', r.status === 403);
+r = await call('/api/v1/admin/licenses/generate', 'POST', { teacher_id: teacher2Id, tier: 'SC5', count: 10, expires_at: Date.now() - 1000 }, adminToken);
+check('batch with past expiry generated', r.status === 200 && r.data.codes.length === 10);
+const expiredCode = r.data.codes[0];
+r = await call('/api/v1/licenses/redeem', 'POST', { code: expiredCode, device_id: 'device-A' });
+check('redeem of expired code rejected with code_expired', r.status === 403 && r.data.error === 'code_expired');
+r = await call('/api/v1/admin/licenses/generate', 'POST', { teacher_id: teacher2Id, tier: 'SC5', count: 10, expires_at: Date.now() + 24 * 60 * 60 * 1000 }, adminToken);
+check('batch with future expiry generated', r.status === 200 && r.data.codes.length === 10);
+r = await call('/api/v1/licenses/redeem', 'POST', { code: r.data.codes[0], device_id: 'device-D' });
+check('not-yet-expired code activates', r.status === 200 && r.data.status === 'activated');
+r = await call('/api/v1/admin/report', 'GET', null, adminToken);
+check(
+  'final admin report: 50 issued/sold, 4 activated, 46 unused, 36 remaining, 0 deactivated, 10 expired',
+  r.data.report.issued === 50 && r.data.report.sold === 50 && r.data.report.activated === 4 &&
+    r.data.report.unused === 46 && r.data.report.remaining === 36 &&
+    r.data.report.deactivated === 0 && r.data.report.expired === 10,
+);
+r = await call('/api/v1/auth/login', 'POST', { username: 'testteacher2', password: teacher2Pass });
+const teacher2Token = r.data.token;
+r = await call('/api/v1/teacher/report', 'GET', null, teacher2Token);
+check(
+  'teacher2 report: 40 issued, 2 activated, 38 unused, 28 remaining, 10 expired',
+  r.data.report.issued === 40 && r.data.report.activated === 2 && r.data.report.unused === 38 &&
+    r.data.report.remaining === 28 && r.data.report.expired === 10 && r.data.report.deactivated === 0,
+);
+
 console.log('\n' + pass + ' checks passed, exit ' + (process.exitCode || 0));

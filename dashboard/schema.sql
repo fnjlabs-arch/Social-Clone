@@ -17,14 +17,27 @@ CREATE TABLE IF NOT EXISTS sessions (
   expires_at INTEGER NOT NULL
 );
 
+-- Status meanings:
+--   unused      — issued, never redeemed (or reactivated: binding cleared).
+--   used        — redeemed and bound to a device (activated).
+--   deactivated — admin-disabled; redeem is rejected until reactivated.
+-- expires_at is OPTIONAL (NULL = never expires). A code whose expires_at
+-- is set and in the past is "expired": redeem rejects it, and the report
+-- counts it separately. No code that exists today has an expiry, so
+-- adding the column changes nothing for existing rows.
+-- NOTE: this dashboard has never been deployed, so no live D1 database
+-- exists yet; this schema is what a fresh deploy creates. A pre-existing
+-- test database built from the older schema must be recreated (the
+-- CHECK constraint on status cannot be widened by ALTER TABLE alone).
 CREATE TABLE IF NOT EXISTS licenses (
   code TEXT PRIMARY KEY,
   tier TEXT NOT NULL CHECK (tier IN ('SC5', 'SC10')),
   max_profiles INTEGER NOT NULL,
   teacher_id TEXT NOT NULL REFERENCES users(id),
-  status TEXT NOT NULL DEFAULT 'unused' CHECK (status IN ('unused', 'used')),
+  status TEXT NOT NULL DEFAULT 'unused' CHECK (status IN ('unused', 'used', 'deactivated')),
   device_id TEXT,
   redeemed_at INTEGER,
+  expires_at INTEGER,
   created_at INTEGER NOT NULL
 );
 

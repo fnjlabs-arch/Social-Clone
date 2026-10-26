@@ -64,6 +64,25 @@ class LicenseActivationScreen extends HookConsumerWidget {
         error.value =
             'This code was not issued by the dashboard. Please check '
             'with your teacher and try again.';
+      } on LicenseDeactivatedException catch (e) {
+        // The dashboard's own message, shown verbatim.
+        error.value = e.message;
+      } on LicenseExpiredException {
+        error.value =
+            'This code has expired. Please check with your teacher '
+            'and try again.';
+      } on LicenseLockedException catch (e) {
+        // Wrong-code lockout: 8 hours after the first 3 wrong entries,
+        // 24 hours for every further lock without a successful
+        // activation in between. The unlock time is shown, never a
+        // generic failure — the user must know when to come back.
+        final u = e.unlockAt.toLocal();
+        final hh = u.hour.toString().padLeft(2, '0');
+        final mm = u.minute.toString().padLeft(2, '0');
+        error.value =
+            'Too many wrong codes. Activation is locked until '
+            '${u.day}/${u.month}/${u.year} $hh:$mm. '
+            'Please try again after that time.';
       } catch (_) {
         error.value = 'Something went wrong. Please try again.';
       } finally {
