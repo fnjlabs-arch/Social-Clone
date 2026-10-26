@@ -56,6 +56,14 @@ class LicenseActivationScreen extends HookConsumerWidget {
         }
       } on InvalidLicenseCodeException {
         error.value = 'This code is not valid. Please check and try again.';
+      } on LicenseAlreadyInUseException catch (e) {
+        // The dashboard's own message, shown verbatim: this code is
+        // bound to a different device and cannot activate here.
+        error.value = e.message;
+      } on LicenseNotIssuedException {
+        error.value =
+            'This code was not issued by the dashboard. Please check '
+            'with your teacher and try again.';
       } catch (_) {
         error.value = 'Something went wrong. Please try again.';
       } finally {
