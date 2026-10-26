@@ -1,0 +1,15 @@
+# Social Clone license dashboard — Cloudflare Workers + D1 (free tier).
+# Deploy only on Qasim's OWN Cloudflare account. No custom domain is attached;
+# the Worker runs on its free *.workers.dev address.
+name = "social-clone-dashboard"
+main = "src/index.js"
+compatibility_date = "2026-10-26"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "social-clone-dashboard"
+# TODO (deployment unblocker): replace with the real D1 database ID after the
+# database is created on Qasim's account. The existing "Mili Deploy QS" token
+# has Pages/DNS scopes only, so it cannot create Workers or D1 resources —
+# see README.md "Deployment status" for the exact blocker and fix.
+database_id = "REPLACE_AFTER_D1_CREATION"
