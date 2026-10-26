@@ -41,7 +41,7 @@ class LicenseGate extends HookConsumerWidget {
         case 1:
           return PlanScreen(
             profiles: 10,
-            price: '\$7',
+            price: '\$9',
             bestValue: true,
             ctaLabel: 'Activate License',
             onCta: () => step.value = 2,
@@ -55,7 +55,7 @@ class LicenseGate extends HookConsumerWidget {
         default:
           return PlanScreen(
             profiles: 5,
-            price: '\$5',
+            price: '\$7',
             bestValue: false,
             ctaLabel: 'Continue',
             onCta: () => step.value = 1,
