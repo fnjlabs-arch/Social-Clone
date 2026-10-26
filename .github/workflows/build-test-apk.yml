@@ -134,6 +134,19 @@ jobs:
 
       - name: Build release APK (alpha flavor)
         working-directory: apps/weblibre
+        # Signing fix (2026-10-26): the alpha flavor's signingConfigs.debug
+        # is overridden by buildTypes.release for the alphaRelease variant,
+        # and the release config's storeFile comes from KEY_PATH, which this
+        # test workflow never set — hence "Keystore file not set for signing
+        # config release" on the previous run. Point the release config at
+        # the committed TEST keystore for this step only (public
+        # android/androiddebugkey credentials, test-only by design). This
+        # touches nothing in build.yml: the stable track still gets its real
+        # key from its own secrets there.
+        env:
+          KEY_PATH: ${{ github.workspace }}/apps/weblibre/android/app/debug.keystore
+          KEY_ALIAS: androiddebugkey
+          KEY_PASSWORD: android
         run: flutter build apk --release --flavor alpha --target-platform android-arm,android-arm64,android-x64 --no-tree-shake-icons
 
       - name: Upload test APK
