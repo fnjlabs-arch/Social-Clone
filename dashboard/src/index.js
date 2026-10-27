@@ -475,7 +475,7 @@ const UI = '<!doctype html><html lang="en"><head><meta charset="utf-8">'
   + 'function generate(){ var t = document.getElementById("gTeacher").value; var tier = document.getElementById("gTier").value; var n = document.getElementById("gCount").value;'
   + ' api("/api/v1/admin/licenses/generate", "POST", {teacher_id: t, tier: tier, count: Number(n)}).then(function(o){'
   + '  if(o.ok){ document.getElementById("gMsg").textContent = "Generated " + o.count + " " + o.tier + " codes.";'
-  + '   document.getElementById("gCodes").innerHTML = "<p>" + o.codes.join("<br>") + "</p>"; refresh(); } else showMsg("gMsg", o); }); }'
+  + '   var gc = tier === "SC5" ? "#2563eb" : "#dc2626"; document.getElementById("gCodes").innerHTML = "<p style=\'color:\' + gc + \';font-weight:bold\'>" + o.codes.join("<br>") + "</p>"; refresh(); } else showMsg("gMsg", o); }); }'
   + 'function init(){ api("/api/v1/setup/status").then(function(o){ if(o.needs_setup) document.getElementById("setupCard").style.display = "block"; }); if(token) refresh(); }'
   + 'init();</script></body></html>';
 
