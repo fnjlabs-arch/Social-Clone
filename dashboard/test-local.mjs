@@ -180,6 +180,9 @@ r = await call('/api/v1/admin/licenses/' + encodeURIComponent(codeB) + '/status'
 check('reactivate returns code to unused', r.status === 200 && r.data.status === 'unused');
 r = await call('/api/v1/licenses/redeem', 'POST', { code: codeB, device_id: 'device-X' });
 check('reactivated code activates fresh', r.status === 200 && r.data.status === 'activated');
+r = await call('/api/v1/licenses', 'GET', null, teacherToken);
+const codeAExpiry = r.data.licenses.find((c) => c.code === codeA).expires_at;
+check('bound code has an original 30-day expiry before deactivate', codeAExpiry !== null && codeAExpiry > Date.now());
 r = await call('/api/v1/admin/licenses/' + encodeURIComponent(codeA) + '/status', 'POST', { action: 'deactivate' }, adminToken);
 check('deactivate bound code succeeds', r.status === 200 && r.data.status === 'deactivated');
 r = await call('/api/v1/licenses/redeem', 'POST', { code: codeA, device_id: 'device-A' });
@@ -193,12 +196,18 @@ r = await call('/api/v1/admin/licenses/' + encodeURIComponent(codeA) + '/status'
 check('reactivate bound code succeeds', r.status === 200 && r.data.status === 'unused');
 r = await call('/api/v1/licenses', 'GET', null, teacherToken);
 check(
-  'reactivated code shows unused with binding cleared',
+  'reactivated code shows unused with binding cleared but original expiry kept (clock NOT reset)',
   r.data.licenses.find((c) => c.code === codeA).status === 'unused' &&
-    r.data.licenses.find((c) => c.code === codeA).device_id === null,
+    r.data.licenses.find((c) => c.code === codeA).device_id === null &&
+    r.data.licenses.find((c) => c.code === codeA).expires_at === codeAExpiry,
 );
 r = await call('/api/v1/licenses/redeem', 'POST', { code: codeA, device_id: 'device-B' });
 check('reactivated code activates on a different device (binding was cleared)', r.status === 200 && r.data.status === 'activated');
+r = await call('/api/v1/licenses', 'GET', null, teacherToken);
+check(
+  'redeem after reactivate keeps original expiry (no fresh 30 days)',
+  r.data.licenses.find((c) => c.code === codeA).expires_at === codeAExpiry,
+);
 r = await call('/api/v1/admin/licenses/' + encodeURIComponent(codeA) + '/status', 'POST', { action: 'reactivate' }, adminToken);
 check('reactivating a non-deactivated code is a clear 400', r.status === 400 && r.data.error === 'not_deactivated');
 r = await call('/api/v1/admin/licenses/' + encodeURIComponent(makeCode('SC5')) + '/status', 'POST', { action: 'deactivate' }, adminToken);

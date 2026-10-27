@@ -482,9 +482,15 @@ async function handleActiveExpired(env, request) {
 //   deactivate: an unused OR bound (used) code becomes 'deactivated'.
 //     Its device_id/redeemed_at are kept for audit, but redeem is
 //     rejected with code_deactivated until reactivated.
-//   reactivate: a 'deactivated' code returns to 'unused' with its device
-//     binding cleared (device_id and redeemed_at set to NULL), so it can
-//     be activated fresh on any device. Reactivating a code that is not
+//   reactivate: a 'deactivated' code returns to 'unused' with only its
+//     device binding cleared (device_id set to NULL), so it can be
+//     activated on a different device. Its original clock is NOT reset:
+//     redeemed_at and expires_at are kept, so the 30-day timer keeps
+//     running from the FIRST activation, including the deactivated
+//     period (e.g. first activation + 16 days, deactivated 2 days,
+//     reactivated on day 18 => only 12 days left, not a fresh 30).
+//     A never-activated code has no clock yet, so its first activation
+//     after reactivate still starts a fresh 30 days. Reactivating a code that is not
 //     deactivated is a clear 400 error ('not_deactivated'), not a silent
 //     no-op. Deactivating an already-deactivated code is idempotent
 //     (200, current status) — disabling twice is harmless.
@@ -507,7 +513,7 @@ async function handleLicenseStatus(env, request, code) {
       return json({ ok: false, error: 'not_deactivated', message: 'This code is not deactivated.' }, 400);
     }
     await env.DB.prepare(
-      "UPDATE licenses SET status = 'unused', device_id = NULL, redeemed_at = NULL, expires_at = NULL WHERE code = ?",
+      "UPDATE licenses SET status = 'unused', device_id = NULL WHERE code = ?",
     )
       .bind(trimmed)
       .run();
@@ -567,14 +573,20 @@ async function handleRedeem(env, request) {
   if (row.status === 'used' && row.device_id === device_id) {
     return json({ ok: true, status: 'already_active_on_this_device', tier: row.tier, max_profiles: row.max_profiles });
   }
-  // A code's clock starts on first activation: 30 days from redemption.
-  // Re-activation on the same device (already_active above) does NOT
-  // reset the clock. An expired code is rejected by the check above,
-  // even on its bound device.
+  // A code's clock starts on first activation and NEVER resets, not
+  // on same-device re-activation (already_active above) and not on
+  // activation after a deactivate/reactivate cycle: the deactivated
+  // period still counts, so a code first activated 16 days ago,
+  // deactivated for 2 days and reactivated on day 18 has only 12 days
+  // left. Only a code with no clock yet (never activated, or generated
+  // without a preset expiry) starts a fresh 30 days here. A preset
+  // expiry from generation is likewise kept, not extended to 30 days.
+  // An expired code is rejected by the check above, even on its bound device.
   const now = Date.now();
-  const expiresAt = now + 30 * 24 * 60 * 60 * 1000;
+  const redeemedAt = row.redeemed_at || now;
+  const expiresAt = row.expires_at || (now + 30 * 24 * 60 * 60 * 1000);
   await env.DB.prepare("UPDATE licenses SET status = 'used', device_id = ?, redeemed_at = ?, expires_at = ? WHERE code = ?")
-    .bind(String(device_id), now, expiresAt, trimmed)
+    .bind(String(device_id), redeemedAt, expiresAt, trimmed)
     .run();
   return json({ ok: true, status: 'activated', tier: row.tier, max_profiles: row.max_profiles });
 }
