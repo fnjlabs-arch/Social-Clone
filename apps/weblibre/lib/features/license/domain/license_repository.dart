@@ -271,18 +271,11 @@ class LicenseRepository extends AsyncNotifier<LicenseState?> {
     return lockout.lockUntil;
   }
 
-  /// Dashboard base URL — SET THIS BEFORE SHIPPING A BUILD that is
-  /// meant to enforce device binding.
-  ///
-  /// PLACEHOLDER VALUE — DO NOT SHIP AS-IS: the dashboard is not
-  /// deployed yet (its Cloudflare token lacks Workers/D1 scopes), so
-  /// there is no live Worker URL to put here. Replace this entire
-  /// string with the deployed Worker URL printed by `wrangler deploy`
-  /// (a `*.workers.dev` address, no trailing slash, no `/api/...`
-  /// path — the redeem path is appended by [_redeem]).
-  /// While this placeholder is in place, [_redeem] is skipped and
-  /// activation uses the offline fallback path only.
-  static const dashboardBaseUrl = 'https://__SET_DEPLOYED_WORKER_URL_HERE__';
+  /// Dashboard base URL — the live Worker deployed 2026-10-27.
+  /// With this set, activation redeems against the dashboard (1-device
+  /// binding, 30-day expiry from first activation), falling back to
+  /// offline activation only when the network/server is unavailable.
+  static const dashboardBaseUrl = 'https://social-clone-dashboard.qs62765.workers.dev';
 
   static bool get _dashboardConfigured =>
       dashboardBaseUrl.startsWith('https://') &&
