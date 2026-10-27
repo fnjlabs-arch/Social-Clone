@@ -282,6 +282,7 @@ async function handleListLicenses(env, request, url) {
   if (gate.error) return gate.error;
   const { user } = gate;
   const status = url.searchParams.get('status');
+  const tier = url.searchParams.get('tier');
   const teacherId = user.role === 'teacher' ? user.id : url.searchParams.get('teacher_id');
   let sql = 'SELECT code, tier, max_profiles, teacher_id, status, device_id, redeemed_at, expires_at, created_at FROM licenses';
   const args = [];
@@ -289,6 +290,10 @@ async function handleListLicenses(env, request, url) {
   if (teacherId) {
     clauses.push('teacher_id = ?');
     args.push(teacherId);
+  }
+  if (tier === 'SC5' || tier === 'SC10') {
+    clauses.push('tier = ?');
+    args.push(tier);
   }
   if (status === 'used' || status === 'unused' || status === 'deactivated') {
     clauses.push('status = ?');
@@ -436,7 +441,7 @@ const UI = '<!doctype html><html lang="en"><head><meta charset="utf-8">'
   + '<button onclick="generate()">Generate</button><p id="gMsg"></p><div id="gCodes"></div></div>'
   + '<div class="card"><h3>Report</h3><div id="adminReport"></div></div></div>'
   + '<div id="teacherPanel" style="display:none"><h2>My codes</h2><div id="teacherReport"></div></div>'
-  + '<h2>Codes</h2><div id="codes"></div></div>'
+  + '<h2>Codes</h2><label class="muted">Show: </label><select id="tierFilter" onchange="refresh()"><option value="">All tiers</option><option value="SC5">SC5 only — 5 profiles</option><option value="SC10">SC10 only — 10 profiles</option></select><div id="codes"></div></div>'
   + '<script>var token = localStorage.getItem("sc_token") || ""; var role = localStorage.getItem("sc_role") || "";'
   + 'function api(path, method, body){ var h = {"Content-Type":"application/json"}; if(token) h["Authorization"] = "Bearer " + token;'
   + ' return fetch(path, {method: method || "GET", headers: h, body: body ? JSON.stringify(body) : undefined}).then(function(r){ return r.json(); }); }'
@@ -457,7 +462,7 @@ const UI = '<!doctype html><html lang="en"><head><meta charset="utf-8">'
   + '   (o.teachers || []).forEach(function(t){ var op = document.createElement("option"); op.value = t.id; op.textContent = t.username; s.appendChild(op); }); });'
   + '  api("/api/v1/admin/report").then(function(o){ renderReport("adminReport", o.report); }); }'
   + ' else { document.getElementById("teacherPanel").style.display = "block"; api("/api/v1/teacher/report").then(function(o){ renderReport("teacherReport", o.report); }); }'
-  + ' api("/api/v1/licenses").then(function(o){ renderCodes(o.licenses || [], role === "admin"); }); }'
+  + ' var tf = document.getElementById("tierFilter") ? document.getElementById("tierFilter").value : ""; api("/api/v1/licenses" + (tf ? "?tier=" + tf : "")).then(function(o){ renderCodes(o.licenses || [], role === "admin"); }); }'
   + 'function doSetup(){ var u = document.getElementById("setupUser").value; var p = document.getElementById("setupPass").value;'
   + ' api("/api/v1/setup", "POST", {username: u, password: p}).then(function(o){ showMsg("setupMsg", o); if(o.ok) init(); }); }'
   + 'function doLogin(){ var u = document.getElementById("loginUser").value; var p = document.getElementById("loginPass").value;'
