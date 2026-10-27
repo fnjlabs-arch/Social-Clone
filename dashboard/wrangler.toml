@@ -12,4 +12,4 @@ database_name = "social-clone-dashboard"
 # database is created on Qasim's account. The existing "Mili Deploy QS" token
 # has Pages/DNS scopes only, so it cannot create Workers or D1 resources —
 # see README.md "Deployment status" for the exact blocker and fix.
-database_id = "REPLACE_AFTER_D1_CREATION"
+database_id = "6bae504c-3864-41f7-a7c5-bfb30fedbfc9"
