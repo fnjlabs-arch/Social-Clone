@@ -401,6 +401,31 @@ class LicenseRepository extends AsyncNotifier<LicenseState?> {
     return tier;
   }
 
+  /// Signs out of the current license without touching profiles.
+  ///
+  /// Deletes the stored license file and clears the in-memory state, so
+  /// the license gate returns to the plan/activation funnel and the user
+  /// can activate a different code (for example, switching between a
+  /// 5-profile and a 10-profile code they both own). Profiles on disk
+  /// are NOT deleted, and the stable device id is kept, so re-entering
+  /// the old code later on this same device re-activates idempotently
+  /// against the dashboard. New profile creation always follows the
+  /// currently active tier's cap; profiles created under a higher tier
+  /// are not deleted by switching to a lower one.
+  Future<void> signOut() async {
+    try {
+      final file = await _licenseFile();
+      if (await file.exists()) {
+        await file.delete();
+      }
+    } catch (_) {
+      // A file we cannot delete must not leave the app licensed:
+      // clearing the state still sends the user back to activation,
+      // and the next activation overwrites the file.
+    }
+    state = const AsyncData(null);
+  }
+
   @override
   Future<LicenseState?> build() async {
     try {

@@ -98,6 +98,101 @@ class _ProfilesList extends HookConsumerWidget {
     }
   }
 
+  /// Rename a profile (e.g. to the account's own id/handle). The name
+  /// lives in the profile's metadata only — the profile directory is
+  /// keyed by uuid — so renaming needs no restart and loses no data.
+  /// Empty and duplicate names are rejected in the dialog.
+  Future<void> _renameProfile(
+    BuildContext context,
+    WidgetRef ref,
+    Profile profile,
+  ) async {
+    final controller = TextEditingController(text: profile.name);
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Rename profile'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Profile name',
+            hintText: 'e.g. your account id',
+          ),
+          onSubmitted: (value) => Navigator.of(context).pop(value.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.of(context).pop(controller.text.trim()),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    if (newName == null || newName.isEmpty || newName == profile.name) return;
+    if (!context.mounted) return;
+
+    try {
+      final existing = await ref.read(profileRepositoryProvider.future);
+      if (existing.any(
+        (other) =>
+            other.uuidValue != profile.uuidValue && other.name == newName,
+      )) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Another profile already has that name.'),
+          ),
+        );
+        return;
+      }
+      await ref
+          .read(profileRepositoryProvider.notifier)
+          .updateProfileMetadata(profile.copyWith.name(newName));
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not rename the profile. Please try again.'),
+        ),
+      );
+    }
+  }
+
+  /// Sign out of the current license so another code can be activated.
+  /// Profiles are NOT deleted and the app is NOT uninstalled: the gate
+  /// returns to activation, and the old code can be re-entered later
+  /// on this same device.
+  Future<void> _signOutLicense(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Switch license?'),
+        content: const Text(
+          'You will return to license activation, where you can enter '
+          'another code. Your profiles will NOT be deleted, and you can '
+          'switch back by re-entering your previous code on this device.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Switch license'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    await ref.read(licenseRepositoryProvider.notifier).signOut();
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
@@ -158,6 +253,8 @@ class _ProfilesList extends HookConsumerWidget {
                       _ProfileCard(
                         profile: profile,
                         isActive: profile.uuidValue == activeProfile,
+                        onRename: () =>
+                            _renameProfile(context, ref, profile),
                         onTap: () {
                           if (profile.uuidValue == activeProfile) {
                             ref
@@ -182,6 +279,12 @@ class _ProfilesList extends HookConsumerWidget {
                           ),
                         ),
                       ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton.icon(
+                      onPressed: () => _signOutLicense(context, ref),
+                      icon: const Icon(Icons.logout, size: 20),
+                      label: const Text('Switch license'),
                     ),
                   ],
                 ),
@@ -217,11 +320,13 @@ class _ProfileCard extends StatelessWidget {
   final Profile profile;
   final bool isActive;
   final VoidCallback onTap;
+  final VoidCallback onRename;
 
   const _ProfileCard({
     required this.profile,
     required this.isActive,
     required this.onTap,
+    required this.onRename,
   });
 
   @override
@@ -280,6 +385,11 @@ class _ProfileCard extends StatelessWidget {
                       ),
                     ],
                   ),
+                ),
+                IconButton(
+                  onPressed: onRename,
+                  icon: const Icon(Icons.edit),
+                  tooltip: 'Rename profile',
                 ),
                 Icon(
                   isActive ? Icons.check_circle : Icons.chevron_right,
