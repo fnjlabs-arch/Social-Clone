@@ -69,6 +69,33 @@ Unknown/invalid: 404 { "ok": false, "error": "invalid_code", "message": "..." }
 - `expired` — `expires_at` set and in the past, status unused or used.
   A deactivated code counts as deactivated, not expired.
 
+## Teacher wallet (added 2026-10-27, live)
+
+- **Balance in PKR:** every teacher has a `balance_pkr` (starts at Rs 0).
+  SC5 costs **Rs 1,400**, SC10 costs **Rs 1,680** (wholesale $5 / $6).
+- **Admin credit:** admin panel "Teachers and balances" — Amount input
+  per teacher + Add balance. `POST /api/v1/admin/teachers/credit`
+  `{ teacher_id, amount_pkr }`. Every credit is recorded in `transactions`.
+- **Teacher self-generate:** teacher panel "Generate a code from my
+  balance" — pick SC5 or SC10, one code at a time.
+  `POST /api/v1/teacher/licenses/generate` `{ tier }`. The price is
+  deducted at once; if the balance is lower, the call fails with
+  `insufficient_balance` and no code is made. `GET /api/v1/teacher/wallet`
+  returns the balance + recent payments.
+- **Password change (every dashboard):** logged-in admin or teacher can
+  change their own password. `POST /api/v1/auth/change-password`
+  `{ current_password, new_password }` (new password 8+ characters).
+  Other sessions are invalidated; the current session stays logged in.
+- **Admin view of any teacher:** admin panel "Teacher dashboard view" —
+  pick a teacher to see their balance, report, codes and payments, and
+  the Codes list filters to that teacher. No teacher password needed.
+  `GET /api/v1/admin/teacher-view?teacher_id=...` (admin only).
+- **Active / Expired users (admin only, separate section):**
+  `GET /api/v1/admin/users/active-expired` returns `active` (used and
+  not expired) and `expired` (expiry in the past, not deactivated),
+  every entry tagged with its teacher username — so admin knows per
+  teacher how many users actually activated, without asking the teacher.
+
 ## Code management (admin only)
 
 `POST /api/v1/admin/licenses/:code/status` with
