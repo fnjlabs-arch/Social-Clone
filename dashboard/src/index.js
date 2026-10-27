@@ -487,7 +487,7 @@ export default {
     const method = request.method;
     try {
       if (path === '/' && method === 'GET') {
-        return new Response(UI, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+        return new Response(UI, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
       }
       if (path === '/api/v1/setup/status' && method === 'GET') {
         const admin = await env.DB.prepare("SELECT id FROM users WHERE role = 'admin' LIMIT 1").first();
