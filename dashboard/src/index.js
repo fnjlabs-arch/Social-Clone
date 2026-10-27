@@ -348,7 +348,7 @@ async function handleLicenseStatus(env, request, code) {
       return json({ ok: false, error: 'not_deactivated', message: 'This code is not deactivated.' }, 400);
     }
     await env.DB.prepare(
-      "UPDATE licenses SET status = 'unused', device_id = NULL, redeemed_at = NULL WHERE code = ?",
+      "UPDATE licenses SET status = 'unused', device_id = NULL, redeemed_at = NULL, expires_at = NULL WHERE code = ?",
     )
       .bind(trimmed)
       .run();
@@ -408,8 +408,14 @@ async function handleRedeem(env, request) {
   if (row.status === 'used' && row.device_id === device_id) {
     return json({ ok: true, status: 'already_active_on_this_device', tier: row.tier, max_profiles: row.max_profiles });
   }
-  await env.DB.prepare("UPDATE licenses SET status = 'used', device_id = ?, redeemed_at = ? WHERE code = ?")
-    .bind(String(device_id), Date.now(), trimmed)
+  // A code's clock starts on first activation: 30 days from redemption.
+  // Re-activation on the same device (already_active above) does NOT
+  // reset the clock. An expired code is rejected by the check above,
+  // even on its bound device.
+  const now = Date.now();
+  const expiresAt = now + 30 * 24 * 60 * 60 * 1000;
+  await env.DB.prepare("UPDATE licenses SET status = 'used', device_id = ?, redeemed_at = ?, expires_at = ? WHERE code = ?")
+    .bind(String(device_id), now, expiresAt, trimmed)
     .run();
   return json({ ok: true, status: 'activated', tier: row.tier, max_profiles: row.max_profiles });
 }
@@ -446,13 +452,20 @@ const UI = '<!doctype html><html lang="en"><head><meta charset="utf-8">'
   + 'function api(path, method, body){ var h = {"Content-Type":"application/json"}; if(token) h["Authorization"] = "Bearer " + token;'
   + ' return fetch(path, {method: method || "GET", headers: h, body: body ? JSON.stringify(body) : undefined}).then(function(r){ return r.json(); }); }'
   + 'function showMsg(id, o){ document.getElementById(id).textContent = o.ok ? "Done." : ("Error: " + (o.error || o.message || "failed")); }'
-  + 'function renderCodes(list, isAdmin){ var html = "<table><tr><th>Code</th><th>Tier</th><th>Status</th><th>Device</th><th>Expires</th>";'
+  + 'function renderCodes(list, isAdmin){ window._codesList = list; var html = "<table><tr><th>Code</th><th>Tier</th><th>Status</th><th>Device</th><th>Expires</th>";'
   + ' if(isAdmin) html += "<th>Action</th>"; html += "</tr>";'
-  + ' list.forEach(function(c){ var cc = c.tier === "SC5" ? "#2563eb" : "#dc2626"; html += "<tr><td style=\'color:" + cc + ";font-weight:bold\'>" + c.code + "</td><td>" + c.tier + "</td><td>" + c.status + "</td><td>" + (c.device_id || "-") + "</td><td>" + (c.expires_at ? new Date(c.expires_at).toLocaleDateString() : "never") + "</td>";'
-  + ' if(isAdmin){ if(c.status === "deactivated") html += "<td><button onclick=\\"setLicenseStatus(\\"" + c.code + "\\", \\"reactivate\\")\\">Reactivate</button></td>";'
-  + ' else html += "<td><button onclick=\\"setLicenseStatus(\\"" + c.code + "\\", \\"deactivate\\")\\">Deactivate</button></td>"; }'
-  + ' html += "</tr>"; });'
-  + ' document.getElementById("codes").innerHTML = html + "</table>"; }'
+  + ' list.forEach(function(c, idx){ var cc = c.tier === "SC5" ? "#2563eb" : "#dc2626";'
+  + '  var expText = "never";'
+  + '  if(c.expires_at){ var left = c.expires_at - Date.now();'
+  + '   if(left <= 0) expText = "Expired";'
+  + '   else { var d = Math.floor(left / 86400000); var h = Math.floor(left / 3600000) % 24;'
+  + '    expText = (d > 0 ? d + "d " + h + "h left" : h + "h left") + " (" + new Date(c.expires_at).toLocaleDateString() + ")"; } }'
+  + '  html += "<tr><td style=\'color:" + cc + ";font-weight:bold\'>" + c.code + "</td><td>" + c.tier + "</td><td>" + c.status + "</td><td>" + (c.device_id || "-") + "</td><td>" + expText + "</td>";'
+  + '  if(isAdmin){ var act = c.status === "deactivated" ? "reactivate" : "deactivate"; var lbl = c.status === "deactivated" ? "Reactivate" : "Deactivate";'
+  + '   html += "<td><button data-idx=" + idx + " data-action=" + act + ">" + lbl + "</button></td>"; }'
+  + '  html += "</tr>"; });'
+  + ' document.getElementById("codes").innerHTML = html + "</table>";'
+  + ' document.querySelectorAll("#codes button[data-idx]").forEach(function(btn){ btn.addEventListener("click", function(){ var item = window._codesList[Number(btn.getAttribute("data-idx"))]; if(item) setLicenseStatus(item.code, btn.getAttribute("data-action")); }); }); }'
   + 'function renderReport(el, r){ document.getElementById(el).innerHTML = "Issued / sold: " + r.issued + " &nbsp; Activated: " + r.activated + " &nbsp; Remaining: " + r.remaining + " &nbsp; Deactivated: " + r.deactivated + " &nbsp; Expired: " + r.expired; }'
   + 'function setLicenseStatus(code, action){ api("/api/v1/admin/licenses/" + encodeURIComponent(code) + "/status", "POST", {action: action}).then(function(o){ if(!o.ok) alert("Error: " + (o.error || "failed")); refresh(); }); }'
   + 'function refresh(){ if(!token) return; document.getElementById("loginCard").style.display = "none"; document.getElementById("app").style.display = "block";'
