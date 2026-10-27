@@ -230,4 +230,60 @@ check(
     r.data.report.remaining === 28 && r.data.report.expired === 10 && r.data.report.deactivated === 0,
 );
 
+// ---- Wallet, password change, admin view, active/expired (added 2026-10-27) ----
+r = await call('/api/v1/admin/teachers/credit', 'POST', { teacher_id: teacherId, amount_pkr: 30000 }, adminToken);
+check('admin credits teacher1 Rs 30,000', r.status === 200 && r.data.balance_pkr === 30000);
+r = await call('/api/v1/teacher/wallet', 'GET', null, teacherToken);
+check('teacher wallet shows Rs 30,000 and 1 credit transaction', r.data.balance_pkr === 30000 && r.data.transactions.length === 1 && r.data.transactions[0].kind === 'credit');
+r = await call('/api/v1/teacher/licenses/generate', 'POST', { tier: 'SC5' }, teacherToken);
+check('teacher generates SC5, balance drops to Rs 28,600', r.status === 200 && r.data.code.length === 30 && r.data.price_pkr === 1400 && r.data.balance_pkr === 28600);
+const walletCode5 = r.data.code;
+r = await call('/api/v1/teacher/licenses/generate', 'POST', { tier: 'SC10' }, teacherToken);
+check('teacher generates SC10, balance drops to Rs 26,920', r.status === 200 && r.data.code.length === 40 && r.data.price_pkr === 1680 && r.data.balance_pkr === 26920);
+const walletCode10 = r.data.code;
+r = await call('/api/v1/teacher/licenses/generate', 'POST', { tier: 'SC5' }, teacher2Token);
+check('teacher2 with Rs 0 balance is rejected insufficient_balance, no code made', r.status === 400 && r.data.error === 'insufficient_balance');
+r = await call('/api/v1/admin/teachers/credit', 'POST', { teacher_id: teacher2Id, amount_pkr: 1400 }, adminToken);
+check('admin credits teacher2 Rs 1,400', r.status === 200 && r.data.balance_pkr === 1400);
+r = await call('/api/v1/teacher/licenses/generate', 'POST', { tier: 'SC5' }, teacher2Token);
+check('teacher2 generates SC5 and balance hits Rs 0', r.status === 200 && r.data.balance_pkr === 0);
+r = await call('/api/v1/admin/teachers/credit', 'POST', { teacher_id: teacherId, amount_pkr: 1000 }, teacherToken);
+check('teacher cannot credit (admin only)', r.status === 403);
+r = await call('/api/v1/teacher/licenses/generate', 'POST', { tier: 'SC5' }, adminToken);
+check('admin cannot use teacher generate endpoint', r.status === 403);
+r = await call('/api/v1/admin/teacher-view?teacher_id=' + teacherId, 'GET', null, teacherToken);
+check('teacher cannot view admin teacher-view', r.status === 403);
+r = await call('/api/v1/admin/teacher-view?teacher_id=' + teacherId, 'GET', null, adminToken);
+check(
+  'admin teacher-view shows balance, generated codes and ledger',
+  r.status === 200 && r.data.teacher.balance_pkr === 26920 &&
+    r.data.licenses.some((c) => c.code === walletCode5) &&
+    r.data.licenses.some((c) => c.code === walletCode10) &&
+    r.data.transactions.length === 3,
+);
+r = await call('/api/v1/admin/users/active-expired', 'GET', null, adminToken);
+check(
+  'active/expired section: 4 active, 10 expired, every entry tagged with a teacher',
+  r.status === 200 && r.data.active.length === 4 && r.data.expired.length === 10 &&
+    r.data.active.every((u) => !!u.teacher) && r.data.expired.every((u) => !!u.teacher),
+);
+r = await call('/api/v1/admin/users/active-expired', 'GET', null, teacherToken);
+check('teacher cannot view active/expired section', r.status === 403);
+const teacherNewPass = randomPassword();
+r = await call('/api/v1/auth/change-password', 'POST', { current_password: 'wrong-password-1', new_password: teacherNewPass }, teacherToken);
+check('password change with wrong current password rejected', r.status === 401);
+r = await call('/api/v1/auth/change-password', 'POST', { current_password: teacherPass, new_password: teacherNewPass }, teacherToken);
+check('teacher password change succeeds', r.status === 200 && r.data.ok === true);
+r = await call('/api/v1/auth/login', 'POST', { username: 'testteacher', password: teacherPass });
+check('old teacher password no longer works', r.status === 401);
+r = await call('/api/v1/auth/login', 'POST', { username: 'testteacher', password: teacherNewPass });
+check('new teacher password works', r.status === 200 && r.data.role === 'teacher');
+const adminNewPass = randomPassword();
+r = await call('/api/v1/auth/change-password', 'POST', { current_password: adminPass, new_password: adminNewPass }, adminToken);
+check('admin password change succeeds', r.status === 200 && r.data.ok === true);
+r = await call('/api/v1/auth/login', 'POST', { username: 'testadmin', password: adminPass });
+check('old admin password no longer works', r.status === 401);
+r = await call('/api/v1/auth/login', 'POST', { username: 'testadmin', password: adminNewPass });
+check('new admin password works', r.status === 200 && r.data.role === 'admin');
+
 console.log('\n' + pass + ' checks passed, exit ' + (process.exitCode || 0));

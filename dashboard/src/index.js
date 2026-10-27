@@ -20,6 +20,9 @@ const TIERS = {
   SC5: { prefix: 'SC5-', total: 30, randomLen: 22, maxProfiles: 5 },
   SC10: { prefix: 'SC10-', total: 40, randomLen: 31, maxProfiles: 10 },
 };
+// Teacher wallet prices in PKR, confirmed by Qasim 2026-10-27:
+// wholesale $5 / $6 at ~Rs 280 = Rs 1,400 / Rs 1,680.
+const TIER_PRICES_PKR = { SC5: 1400, SC10: 1680 };
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 function checksumFor(body) {
@@ -309,13 +312,169 @@ async function handleTeachers(env, request) {
   const gate = await requireRole(env, request, 'admin');
   if (gate.error) return gate.error;
   const rows = await env.DB.prepare(
-    "SELECT id, username, created_at FROM users WHERE role = 'teacher' ORDER BY created_at DESC",
+    "SELECT id, username, balance_pkr, created_at FROM users WHERE role = 'teacher' ORDER BY created_at DESC",
   ).all();
   const teachers = [];
   for (const t of rows.results || []) {
-    teachers.push({ ...t, report: await reportFor(env, t.id) });
+    teachers.push({ ...t, balance_pkr: t.balance_pkr || 0, report: await reportFor(env, t.id) });
   }
   return json({ ok: true, teachers });
+}
+
+// ---- Wallet + password + admin-view handlers (added 2026-10-27) ----
+// Change own password while logged in (admin or teacher). Requires the
+// current password; the new password needs 8+ characters and is stored
+// only as a fresh PBKDF2 hash. Other sessions are invalidated, the
+// current session is kept so the user is not logged out mid-change.
+async function handleChangePassword(env, request) {
+  const gate = await requireRole(env, request, null);
+  if (gate.error) return gate.error;
+  const { user } = gate;
+  const { current_password, new_password } = await readJson(request);
+  if (!new_password || String(new_password).length < 8) {
+    return json({ ok: false, error: 'new password must be at least 8 characters' }, 400);
+  }
+  const row = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(user.id).first();
+  if (!row) return json({ ok: false, error: 'user_not_found' }, 404);
+  const { hash } = await hashPassword(String(current_password || ''), row.salt);
+  if (hash !== row.password_hash) {
+    return json({ ok: false, error: 'current password is incorrect' }, 401);
+  }
+  const fresh = await hashPassword(String(new_password));
+  await env.DB.prepare('UPDATE users SET salt = ?, password_hash = ? WHERE id = ?')
+    .bind(fresh.salt, fresh.hash, user.id)
+    .run();
+  const auth = request.headers.get('Authorization') || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+  if (token) {
+    await env.DB.prepare('DELETE FROM sessions WHERE user_id = ? AND token != ?').bind(user.id, token).run();
+  } else {
+    await env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(user.id).run();
+  }
+  return json({ ok: true });
+}
+
+// Admin credits a teacher's PKR balance: POST { teacher_id, amount_pkr }.
+// Amount must be a positive integer. Records a 'credit' transaction.
+async function handleCreditTeacher(env, request) {
+  const gate = await requireRole(env, request, 'admin');
+  if (gate.error) return gate.error;
+  const { teacher_id, amount_pkr, note } = await readJson(request);
+  const amount = Number(amount_pkr);
+  if (!Number.isInteger(amount) || amount <= 0 || amount > 10000000) {
+    return json({ ok: false, error: 'amount_pkr must be a positive integer' }, 400);
+  }
+  const teacher = await env.DB.prepare("SELECT id, username, balance_pkr FROM users WHERE id = ? AND role = 'teacher'")
+    .bind(teacher_id)
+    .first();
+  if (!teacher) return json({ ok: false, error: 'teacher not found' }, 404);
+  await env.DB.prepare('UPDATE users SET balance_pkr = COALESCE(balance_pkr, 0) + ? WHERE id = ?')
+    .bind(amount, teacher_id)
+    .run();
+  await env.DB.prepare(
+    'INSERT INTO transactions (id, teacher_id, kind, amount_pkr, tier, code, note, created_at, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+  )
+    .bind(newToken().slice(0, 16), teacher_id, 'credit', amount, null, null, note ? String(note) : null, Date.now(), gate.user.id)
+    .run();
+  const updated = await env.DB.prepare('SELECT balance_pkr FROM users WHERE id = ?').bind(teacher_id).first();
+  return json({ ok: true, teacher_id, username: teacher.username, credited: amount, balance_pkr: updated ? updated.balance_pkr : 0 });
+}
+
+// Teacher generates ONE code from their own balance.
+// POST { tier: 'SC5' | 'SC10' } -> deducts Rs 1,400 / Rs 1,680.
+// Insufficient balance is a clear 400 (insufficient_balance), no code made.
+async function handleTeacherGenerate(env, request) {
+  const gate = await requireRole(env, request, 'teacher');
+  if (gate.error) return gate.error;
+  const { tier } = await readJson(request);
+  if (!TIERS[tier]) return json({ ok: false, error: 'tier must be SC5 or SC10' }, 400);
+  const price = TIER_PRICES_PKR[tier];
+  const teacher = await env.DB.prepare('SELECT balance_pkr FROM users WHERE id = ?').bind(gate.user.id).first();
+  const balance = teacher ? (teacher.balance_pkr || 0) : 0;
+  if (balance < price) {
+    return json({ ok: false, error: 'insufficient_balance', message: 'Balance Rs ' + balance + ' is less than Rs ' + price + ' for ' + tier + '.', balance_pkr: balance, price_pkr: price }, 400);
+  }
+  let code = null;
+  let guard = 0;
+  while (!code && guard < 20) {
+    guard++;
+    const candidate = makeCode(tier);
+    const dup = await env.DB.prepare('SELECT code FROM licenses WHERE code = ?').bind(candidate).first();
+    if (!dup) code = candidate;
+  }
+  if (!code) return json({ ok: false, error: 'could not generate a unique code, try again' }, 500);
+  await env.DB.prepare(
+    "INSERT INTO licenses (code, tier, max_profiles, teacher_id, status, expires_at, created_at) VALUES (?, ?, ?, ?, 'unused', ?, ?)",
+  )
+    .bind(code, tier, TIERS[tier].maxProfiles, gate.user.id, null, Date.now())
+    .run();
+  await env.DB.prepare('UPDATE users SET balance_pkr = COALESCE(balance_pkr, 0) - ? WHERE id = ?')
+    .bind(price, gate.user.id)
+    .run();
+  await env.DB.prepare(
+    'INSERT INTO transactions (id, teacher_id, kind, amount_pkr, tier, code, note, created_at, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+  )
+    .bind(newToken().slice(0, 16), gate.user.id, 'debit', price, tier, code, null, Date.now(), gate.user.id)
+    .run();
+  const updated = await env.DB.prepare('SELECT balance_pkr FROM users WHERE id = ?').bind(gate.user.id).first();
+  return json({ ok: true, code, tier, price_pkr: price, balance_pkr: updated ? updated.balance_pkr : 0 });
+}
+
+// Teacher's own wallet: balance + recent transactions.
+async function handleTeacherWallet(env, request) {
+  const gate = await requireRole(env, request, 'teacher');
+  if (gate.error) return gate.error;
+  const row = await env.DB.prepare('SELECT balance_pkr FROM users WHERE id = ?').bind(gate.user.id).first();
+  const tx = await env.DB.prepare('SELECT kind, amount_pkr, tier, code, note, created_at FROM transactions WHERE teacher_id = ? ORDER BY created_at DESC LIMIT 50')
+    .bind(gate.user.id)
+    .all();
+  return json({ ok: true, balance_pkr: row ? (row.balance_pkr || 0) : 0, transactions: tx.results || [] });
+}
+
+// Admin view of ONE teacher's dashboard: balance, report, codes, ledger.
+// Admin only; no teacher password or login needed to view it.
+async function handleAdminTeacherView(env, request, url) {
+  const gate = await requireRole(env, request, 'admin');
+  if (gate.error) return gate.error;
+  const teacherId = url.searchParams.get('teacher_id');
+  const teacher = await env.DB.prepare("SELECT id, username, balance_pkr, created_at FROM users WHERE id = ? AND role = 'teacher'")
+    .bind(teacherId)
+    .first();
+  if (!teacher) return json({ ok: false, error: 'teacher not found' }, 404);
+  const licenses = await env.DB.prepare('SELECT code, tier, max_profiles, status, device_id, redeemed_at, expires_at, created_at FROM licenses WHERE teacher_id = ? ORDER BY created_at DESC LIMIT 500')
+    .bind(teacherId)
+    .all();
+  const tx = await env.DB.prepare('SELECT kind, amount_pkr, tier, code, note, created_at FROM transactions WHERE teacher_id = ? ORDER BY created_at DESC LIMIT 100')
+    .bind(teacherId)
+    .all();
+  return json({
+    ok: true,
+    teacher: { ...teacher, balance_pkr: teacher.balance_pkr || 0 },
+    report: await reportFor(env, teacherId),
+    licenses: licenses.results || [],
+    transactions: tx.results || [],
+  });
+}
+
+// Admin-only separate Active / Expired space, each entry tagged by teacher.
+// Active = status 'used' and not expired (NULL expiry counts as active).
+// Expired = expires_at in the past and status is not 'deactivated'
+// (matches the report definition: used or unused, never deactivated).
+async function handleActiveExpired(env, request) {
+  const gate = await requireRole(env, request, 'admin');
+  if (gate.error) return gate.error;
+  const now = Date.now();
+  const active = await env.DB.prepare(
+    'SELECT l.code, l.tier, l.device_id, l.redeemed_at, l.expires_at, u.username AS teacher FROM licenses l JOIN users u ON u.id = l.teacher_id WHERE l.status = ? AND (l.expires_at IS NULL OR l.expires_at >= ?) ORDER BY l.redeemed_at DESC',
+  )
+    .bind('used', now)
+    .all();
+  const expired = await env.DB.prepare(
+    'SELECT l.code, l.tier, l.status, l.device_id, l.redeemed_at, l.expires_at, u.username AS teacher FROM licenses l JOIN users u ON u.id = l.teacher_id WHERE l.expires_at IS NOT NULL AND l.expires_at < ? AND l.status != ? ORDER BY l.expires_at DESC',
+  )
+    .bind(now, 'deactivated')
+    .all();
+  return json({ ok: true, active: active.results || [], expired: expired.results || [] });
 }
 
 // Admin-only: POST /api/v1/admin/licenses/:code/status
@@ -445,10 +604,15 @@ const UI = '<!doctype html><html lang="en"><head><meta charset="utf-8">'
   + '<select id="gTier"><option value="SC5">SC5 — 5 profiles (30 chars)</option><option value="SC10">SC10 — 10 profiles (40 chars)</option></select>'
   + '<select id="gCount"><option value="10">10 codes</option><option value="20">20 codes</option><option value="100">100 codes</option></select>'
   + '<button onclick="generate()">Generate</button><p id="gMsg"></p><div id="gCodes"></div></div>'
-  + '<div class="card"><h3>Report</h3><div id="adminReport"></div></div></div>'
-  + '<div id="teacherPanel" style="display:none"><h2>My codes</h2><div id="teacherReport"></div></div>'
+  + '<div class="card"><h3>Report</h3><div id="adminReport"></div></div>'
+  + '<div class="card"><h3>Teachers and balances</h3><p class="muted">Add the payment a teacher gave you, in PKR. It goes straight to that teacher balance.</p><div id="adminTeachers"></div><p id="creditMsg"></p></div>'
+  + '<div class="card"><h3>Teacher dashboard view</h3><p class="muted">Pick a teacher to see their full dashboard: balance, report, codes and payments.</p><select id="viewTeacher"></select><button onclick="viewTeacherDashboard()">View teacher</button><button class="secondary" onclick="clearTeacherView()">Show all codes</button><div id="teacherView"></div></div>'
+  + '<div class="card"><h3>Active and expired users</h3><p class="muted">Every active and expired user, tagged with their teacher. No need to ask the teacher.</p><div id="activeExpired"></div></div></div>'
+  + '<div id="teacherPanel" style="display:none"><h2>My codes</h2><div id="teacherWallet"></div>'
+  + '<div class="card"><h3>Generate a code from my balance</h3><p class="muted">SC5 costs Rs 1,400. SC10 costs Rs 1,680. The amount is deducted from your balance at once.</p><select id="tGenTier"><option value="SC5">SC5 - 5 profiles - Rs 1,400</option><option value="SC10">SC10 - 10 profiles - Rs 1,680</option></select><button onclick="generateTeacherCode()">Generate code</button><p id="tGenMsg"></p><div id="tGenCode"></div></div><div id="teacherReport"></div></div>'
+  + '<div class="card"><h3>Change password</h3><p class="muted">Change your own password. You stay logged in on this device.</p><input id="cpCurrent" type="password" placeholder="Current password"><input id="cpNew" type="password" placeholder="New password"><button onclick="changePassword()">Change password</button><p id="cpMsg"></p></div>'
   + '<h2>Codes</h2><label class="muted">Show: </label><select id="tierFilter" onchange="refresh()"><option value="">All tiers</option><option value="SC5">SC5 only — 5 profiles</option><option value="SC10">SC10 only — 10 profiles</option></select><div id="codes"></div></div>'
-  + '<script>var token = localStorage.getItem("sc_token") || ""; var role = localStorage.getItem("sc_role") || "";'
+  + '<script>var token = localStorage.getItem("sc_token") || ""; var role = localStorage.getItem("sc_role") || ""; var viewTeacherId = "";'
   + 'function api(path, method, body){ var h = {"Content-Type":"application/json"}; if(token) h["Authorization"] = "Bearer " + token;'
   + ' return fetch(path, {method: method || "GET", headers: h, body: body ? JSON.stringify(body) : undefined}).then(function(r){ return r.json(); }); }'
   + 'function showMsg(id, o){ document.getElementById(id).textContent = o.ok ? "Done." : ("Error: " + (o.error || o.message || "failed")); }'
@@ -467,15 +631,23 @@ const UI = '<!doctype html><html lang="en"><head><meta charset="utf-8">'
   + ' document.getElementById("codes").innerHTML = html + "</table>";'
   + ' document.querySelectorAll("#codes button[data-idx]").forEach(function(btn){ btn.addEventListener("click", function(){ var item = window._codesList[Number(btn.getAttribute("data-idx"))]; if(item) setLicenseStatus(item.code, btn.getAttribute("data-action")); }); }); }'
   + 'function renderReport(el, r){ document.getElementById(el).innerHTML = "Issued / sold: " + r.issued + " &nbsp; Activated: " + r.activated + " &nbsp; Remaining: " + r.remaining + " &nbsp; Deactivated: " + r.deactivated + " &nbsp; Expired: " + r.expired; }'
+  + 'function renderAdminTeachers(teachers){ var html = ""; (teachers || []).forEach(function(t){ html += "<p><b>" + t.username + "</b> - Balance: Rs " + (t.balance_pkr || 0) + " - Issued: " + t.report.issued + " Activated: " + t.report.activated + " <input id=creditAmt-" + t.id + " placeholder=Amount> <button data-credit=" + t.id + ">Add balance</button></p>"; }); document.getElementById("adminTeachers").innerHTML = html || "<p class=muted>No teachers yet.</p>"; document.querySelectorAll("#adminTeachers button[data-credit]").forEach(function(btn){ btn.addEventListener("click", function(){ var tid = btn.getAttribute("data-credit"); var amt = document.getElementById("creditAmt-" + tid).value; api("/api/v1/admin/teachers/credit", "POST", {teacher_id: tid, amount_pkr: Number(amt)}).then(function(o){ showMsg("creditMsg", o); if(o.ok) refresh(); }); }); }); }'
+  + 'function renderActiveExpired(d){ var html = "<h4>Active users (" + d.active.length + ")</h4>"; if(!d.active.length) html += "<p class=muted>None yet.</p>"; else { html += "<table><tr><th>Code</th><th>Tier</th><th>Teacher</th><th>Expires</th></tr>"; d.active.forEach(function(u){ var cc = u.tier === "SC5" ? "#2563eb" : "#dc2626"; html += "<tr><td style=\'color:" + cc + ";font-weight:bold\'>" + u.code + "</td><td>" + u.tier + "</td><td>" + u.teacher + "</td><td>" + (u.expires_at ? new Date(u.expires_at).toLocaleDateString() : "never") + "</td></tr>"; }); html += "</table>"; } html += "<h4>Expired users (" + d.expired.length + ")</h4>"; if(!d.expired.length) html += "<p class=muted>None yet.</p>"; else { html += "<table><tr><th>Code</th><th>Tier</th><th>Teacher</th><th>Status</th><th>Expired on</th></tr>"; d.expired.forEach(function(u){ html += "<tr><td>" + u.code + "</td><td>" + u.tier + "</td><td>" + u.teacher + "</td><td>" + u.status + "</td><td>" + new Date(u.expires_at).toLocaleDateString() + "</td></tr>"; }); html += "</table>"; } document.getElementById("activeExpired").innerHTML = html; }'
+  + 'function renderTeacherWallet(w){ var html = "<p><b>Balance: Rs " + (w.balance_pkr || 0) + "</b></p>"; if((w.transactions || []).length){ html += "<p class=muted>Recent payments:</p><table><tr><th>Type</th><th>Amount</th><th>Tier</th><th>Code</th><th>Date</th></tr>"; w.transactions.slice(0, 20).forEach(function(tx){ html += "<tr><td>" + tx.kind + "</td><td>Rs " + tx.amount_pkr + "</td><td>" + (tx.tier || "-") + "</td><td>" + (tx.code || "-") + "</td><td>" + new Date(tx.created_at).toLocaleDateString() + "</td></tr>"; }); html += "</table>"; } document.getElementById("teacherWallet").innerHTML = html; }'
+  + 'function changePassword(){ var cur = document.getElementById("cpCurrent").value; var nw = document.getElementById("cpNew").value; api("/api/v1/auth/change-password", "POST", {current_password: cur, new_password: nw}).then(function(o){ showMsg("cpMsg", o); if(o.ok){ document.getElementById("cpCurrent").value = ""; document.getElementById("cpNew").value = ""; } }); }'
+  + 'function generateTeacherCode(){ var tier = document.getElementById("tGenTier").value; api("/api/v1/teacher/licenses/generate", "POST", {tier: tier}).then(function(o){ if(o.ok){ var gc = tier === "SC5" ? "#2563eb" : "#dc2626"; document.getElementById("tGenMsg").textContent = "Generated. New balance: Rs " + o.balance_pkr + "."; document.getElementById("tGenCode").innerHTML = "<p style=\'color:" + gc + ";font-weight:bold\'>" + o.code + "</p>"; refresh(); } else { document.getElementById("tGenMsg").textContent = "Error: " + (o.error || o.message || "failed"); } }); }'
+  + 'function viewTeacherDashboard(){ var s = document.getElementById("viewTeacher"); viewTeacherId = s.value; if(!viewTeacherId) return; api("/api/v1/admin/teacher-view?teacher_id=" + viewTeacherId).then(function(o){ if(!o.ok){ document.getElementById("teacherView").textContent = "Error: " + (o.error || "failed"); return; } var html = "<p><b>" + o.teacher.username + "</b> - Balance: Rs " + o.teacher.balance_pkr + "</p>"; html += "<p>Issued: " + o.report.issued + " Activated: " + o.report.activated + " Remaining: " + o.report.remaining + " Expired: " + o.report.expired + "</p>"; if((o.transactions || []).length){ html += "<p class=muted>Payments:</p>"; o.transactions.slice(0, 20).forEach(function(tx){ html += "<p>" + tx.kind + " Rs " + tx.amount_pkr + " " + (tx.tier || "") + " " + (tx.code || "") + " " + new Date(tx.created_at).toLocaleDateString() + "</p>"; }); } document.getElementById("teacherView").innerHTML = html; refresh(); }); }'
+  + 'function clearTeacherView(){ viewTeacherId = ""; document.getElementById("teacherView").innerHTML = ""; refresh(); }'
   + 'function setLicenseStatus(code, action){ api("/api/v1/admin/licenses/" + encodeURIComponent(code) + "/status", "POST", {action: action}).then(function(o){ if(!o.ok) alert("Error: " + (o.error || "failed")); refresh(); }); }'
   + 'function refresh(){ if(!token) return; document.getElementById("loginCard").style.display = "none"; document.getElementById("app").style.display = "block";'
   + ' document.getElementById("who").textContent = "Logged in as " + localStorage.getItem("sc_user") + " (" + role + ")";'
   + ' if(role === "admin"){ document.getElementById("adminPanel").style.display = "block";'
-  + '  api("/api/v1/admin/teachers").then(function(o){ var s = document.getElementById("gTeacher"); s.innerHTML = "";'
-  + '   (o.teachers || []).forEach(function(t){ var op = document.createElement("option"); op.value = t.id; op.textContent = t.username; s.appendChild(op); }); });'
-  + '  api("/api/v1/admin/report").then(function(o){ renderReport("adminReport", o.report); }); }'
-  + ' else { document.getElementById("teacherPanel").style.display = "block"; api("/api/v1/teacher/report").then(function(o){ renderReport("teacherReport", o.report); }); }'
-  + ' var tf = document.getElementById("tierFilter") ? document.getElementById("tierFilter").value : ""; api("/api/v1/licenses" + (tf ? "?tier=" + tf : "")).then(function(o){ renderCodes(o.licenses || [], role === "admin"); }); }'
+  + '  api("/api/v1/admin/teachers").then(function(o){ var s = document.getElementById("gTeacher"); s.innerHTML = ""; var v = document.getElementById("viewTeacher"); v.innerHTML = "";'
+  + '   (o.teachers || []).forEach(function(t){ var op = document.createElement("option"); op.value = t.id; op.textContent = t.username; s.appendChild(op); var op2 = document.createElement("option"); op2.value = t.id; op2.textContent = t.username; v.appendChild(op2); }); if(viewTeacherId) v.value = viewTeacherId; renderAdminTeachers(o.teachers || []); });'
+  + '  api("/api/v1/admin/report").then(function(o){ renderReport("adminReport", o.report); });'
+  + '  api("/api/v1/admin/users/active-expired").then(function(o){ if(o.ok) renderActiveExpired(o); }); }'
+  + ' else { document.getElementById("teacherPanel").style.display = "block"; api("/api/v1/teacher/report").then(function(o){ renderReport("teacherReport", o.report); }); api("/api/v1/teacher/wallet").then(function(o){ if(o.ok) renderTeacherWallet(o); }); }'
+  + ' var tf = document.getElementById("tierFilter") ? document.getElementById("tierFilter").value : ""; var q = []; if(tf) q.push("tier=" + tf); if(viewTeacherId) q.push("teacher_id=" + viewTeacherId); api("/api/v1/licenses" + (q.length ? "?" + q.join("&") : "")).then(function(o){ renderCodes(o.licenses || [], role === "admin"); }); }'
   + 'function doSetup(){ var u = document.getElementById("setupUser").value; var p = document.getElementById("setupPass").value;'
   + ' api("/api/v1/setup", "POST", {username: u, password: p}).then(function(o){ showMsg("setupMsg", o); if(o.ok) init(); }); }'
   + 'function doLogin(){ var u = document.getElementById("loginUser").value; var p = document.getElementById("loginPass").value;'
@@ -509,8 +681,14 @@ export default {
       if (path === '/api/v1/setup' && method === 'POST') return handleSetup(env, request);
       if (path === '/api/v1/auth/login' && method === 'POST') return handleLogin(env, request);
       if (path === '/api/v1/auth/logout' && method === 'POST') return handleLogout(env, request);
+      if (path === '/api/v1/auth/change-password' && method === 'POST') return handleChangePassword(env, request);
       if (path === '/api/v1/admin/teachers' && method === 'POST') return handleCreateTeacher(env, request);
       if (path === '/api/v1/admin/teachers' && method === 'GET') return handleTeachers(env, request);
+      if (path === '/api/v1/admin/teachers/credit' && method === 'POST') return handleCreditTeacher(env, request);
+      if (path === '/api/v1/admin/teacher-view' && method === 'GET') return handleAdminTeacherView(env, request, url);
+      if (path === '/api/v1/admin/users/active-expired' && method === 'GET') return handleActiveExpired(env, request);
+      if (path === '/api/v1/teacher/licenses/generate' && method === 'POST') return handleTeacherGenerate(env, request);
+      if (path === '/api/v1/teacher/wallet' && method === 'GET') return handleTeacherWallet(env, request);
       if (path === '/api/v1/admin/licenses/generate' && method === 'POST') return handleGenerate(env, request);
       if (path === '/api/v1/admin/report' && method === 'GET') {
         const gate = await requireRole(env, request, 'admin');
@@ -520,7 +698,8 @@ export default {
       if (path === '/api/v1/teacher/report' && method === 'GET') {
         const gate = await requireRole(env, request, 'teacher');
         if (gate.error) return gate.error;
-        return json({ ok: true, report: await reportFor(env, gate.user.id) });
+        const bal = await env.DB.prepare('SELECT balance_pkr FROM users WHERE id = ?').bind(gate.user.id).first();
+        return json({ ok: true, report: await reportFor(env, gate.user.id), balance_pkr: bal ? (bal.balance_pkr || 0) : 0 });
       }
       if (path === '/api/v1/licenses' && method === 'GET') return handleListLicenses(env, request, url);
       if (path.startsWith('/api/v1/admin/licenses/') && path.endsWith('/status') && method === 'POST') {

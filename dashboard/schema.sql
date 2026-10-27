@@ -8,7 +8,25 @@ CREATE TABLE IF NOT EXISTS users (
   role TEXT NOT NULL CHECK (role IN ('admin', 'teacher')),
   salt TEXT NOT NULL,
   password_hash TEXT NOT NULL,
+  balance_pkr INTEGER NOT NULL DEFAULT 0,
   created_at INTEGER NOT NULL
+);
+
+-- Wallet ledger: admin credits a teacher's PKR balance; each teacher
+-- self-generated code debits it (SC5 Rs 1,400, SC10 Rs 1,680).
+-- Existing live databases created from the older schema need:
+--   ALTER TABLE users ADD COLUMN balance_pkr INTEGER NOT NULL DEFAULT 0;
+-- plus the transactions table below (CREATE IF NOT EXISTS covers it).
+CREATE TABLE IF NOT EXISTS transactions (
+  id TEXT PRIMARY KEY,
+  teacher_id TEXT NOT NULL REFERENCES users(id),
+  kind TEXT NOT NULL CHECK (kind IN ('credit', 'debit')),
+  amount_pkr INTEGER NOT NULL,
+  tier TEXT,
+  code TEXT,
+  note TEXT,
+  created_at INTEGER NOT NULL,
+  created_by TEXT
 );
 
 CREATE TABLE IF NOT EXISTS sessions (
@@ -44,3 +62,4 @@ CREATE TABLE IF NOT EXISTS licenses (
 CREATE INDEX IF NOT EXISTS idx_licenses_teacher ON licenses (teacher_id);
 CREATE INDEX IF NOT EXISTS idx_licenses_status ON licenses (status);
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions (user_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_teacher ON transactions (teacher_id);
