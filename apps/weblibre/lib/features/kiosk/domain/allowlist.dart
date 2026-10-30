@@ -27,11 +27,18 @@ const _allowedHostSuffixes = <String>[
   'fbsbx.com',
   'fb.com',
   'facebook.net',
+  // TempMail36 (in-app tab; ?app_source=socialclone gives 24h addresses)
+  'tempmail36.app',
 ];
 
 /// Home destinations offered on the Social Clone home screen.
 const tiktokHomeUrl = 'https://www.tiktok.com/';
 const facebookHomeUrl = 'https://www.facebook.com/';
+
+/// TempMail36 home, opened inside Social Clone. The app_source param is
+/// what earns the 24h tier (86400s) from the TempMail36 Worker; without
+/// it, addresses created on the site get the 1h tier instead.
+const tempMailHomeUrl = 'https://tempmail36.app/?app_source=socialclone';
 
 /// Returns true when [url] may load inside Social Clone.
 ///

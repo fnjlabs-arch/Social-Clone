@@ -406,7 +406,8 @@ class _ProfileCard extends StatelessWidget {
   }
 }
 
-/// Level 2: one profile's home — its name and the two big app buttons.
+/// Level 2: one profile's home — its name, the two big app buttons,
+/// and a smaller TempMail36 button below them.
 class _ProfileHome extends HookConsumerWidget {
   const _ProfileHome();
 
@@ -516,6 +517,50 @@ class _ProfileHome extends HookConsumerWidget {
                 homeUrl: facebookHomeUrl,
                 siteMatches: (host) =>
                     host == 'facebook.com' || host.endsWith('.facebook.com'),
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Third, smaller button — deliberately NOT one of the two big
+            // app buttons above. Opens TempMail36 as a new tab inside
+            // this same profile via the same _open() pattern: Back
+            // returns to this profile home (tab kept), re-tapping
+            // resumes the same tab (duplicates closed). Each profile
+            // gets its own TempMail tab/inbox because tabs belong to
+            // the active profile's session (profile switch restarts).
+            Center(
+              child: SizedBox(
+                height: 48,
+                width: 220,
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF1E88E5),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  onPressed: () => _open(
+                    ref,
+                    homeUrl: tempMailHomeUrl,
+                    siteMatches: (host) =>
+                        host == 'tempmail36.app' ||
+                        host.endsWith('.tempmail36.app'),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.mail, size: 22),
+                      SizedBox(width: 8),
+                      Text(
+                        'TempMail36',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 36),
